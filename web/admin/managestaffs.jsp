@@ -162,6 +162,20 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        /* Loading spinner */
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0284a8;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-[#f0f7fa] text-[#1e3c5c] antialiased flex">
@@ -179,6 +193,11 @@
             </div>
             <div class="flex items-center gap-3">
                 <span class="bg-[#0284a8] text-white text-xs px-3 py-1.5 rounded-full" x-text="`${filteredStaff.length} staff`"></span>
+                <button @click="loadStaff()" class="bg-[#b5e5e0] p-2 rounded-lg hover:bg-[#9ac9c2] transition" title="Refresh">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#1e3c5c]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                </button>
             </div>
         </header>
 
@@ -186,11 +205,9 @@
         <div class="p-4 md:p-6 lg:p-8 space-y-6 max-w-full">
 
             <!-- Header with title -->
-            <div class="flex justify-between items-center">
-                <div>
-                    <h2 class="text-2xl md:text-3xl font-bold text-[#1e3c5c]">Manage Staff 👥</h2>
-                    <p class="text-[#3a5a78] text-base mt-1">View and manage staff roles and account status</p>
-                </div>
+            <div>
+                <h2 class="text-2xl md:text-3xl font-bold text-[#1e3c5c]">Manage Staff 👥</h2>
+                <p class="text-[#3a5a78] text-base mt-1">View and manage staff roles and account status</p>
             </div>
 
             <!-- Statistics Cards -->
@@ -290,7 +307,7 @@
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Role</label>
                         <select x-model="roleFilter" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                             <option value="all">All Roles</option>
-                            <template x-for="role in getRoleCounts()" :key="role.name">
+                            <template x-for="role in roles" :key="role.id">
                                 <option :value="role.name" x-text="role.name"></option>
                             </template>
                         </select>
@@ -340,8 +357,14 @@
                 </div>
             </div>
 
+            <!-- Loading Indicator -->
+            <div x-show="loading" class="text-center py-8">
+                <div class="loading-spinner"></div>
+                <p class="text-[#3a5a78] mt-2">Loading staff data...</p>
+            </div>
+
             <!-- Staff Table (Compact Design) -->
-            <div class="bg-white rounded-2xl shadow-md border border-[#b5e5e0] overflow-hidden">
+            <div x-show="!loading" class="bg-white rounded-2xl shadow-md border border-[#b5e5e0] overflow-hidden">
                 <div class="table-container">
                     <table>
                         <thead>
@@ -367,7 +390,7 @@
                                     
                                     <!-- Name -->
                                     <td>
-                                        <div class="text-sm text-[#1e3c5c] font-medium compact-cell" x-text="staff.name"></div>
+                                        <div class="text-sm text-[#1e3c5c] font-medium compact-cell" x-text="staff.fullname"></div>
                                     </td>
                                     
                                     <!-- Username -->
@@ -385,12 +408,12 @@
                                     <td>
                                         <span class="role-badge text-xs"
                                               :class="{
-                                                  'bg-purple-100 text-purple-700': staff.role === 'Admin',
-                                                  'bg-blue-100 text-blue-700': staff.role === 'Manager',
-                                                  'bg-green-100 text-green-700': staff.role === 'Supervisor',
-                                                  'bg-orange-100 text-orange-700': staff.role === 'Staff'
+                                                  'bg-purple-100 text-purple-700': getRoleNameFromId(staff.roleId) === 'Admin',
+                                                  'bg-blue-100 text-blue-700': getRoleNameFromId(staff.roleId) === 'Manager',
+                                                  'bg-green-100 text-green-700': getRoleNameFromId(staff.roleId) === 'Supervisor',
+                                                  'bg-orange-100 text-orange-700': getRoleNameFromId(staff.roleId) === 'Staff'
                                               }">
-                                            <span x-text="staff.role"></span>
+                                            <span x-text="getRoleNameFromId(staff.roleId)"></span>
                                         </span>
                                     </td>
                                     
@@ -428,8 +451,9 @@
                                                 <span class="text-sm">✅</span>
                                             </button>
                                             
-                                            <!-- Edit Role -->
+                                            <!-- Edit Role - Hide for Admin users -->
                                             <button @click="editRole(staff)" 
+                                                   x-show="getRoleNameFromId(staff.roleId) !== 'Admin'"
                                                     class="action-btn w-7 h-7 bg-blue-100 text-blue-600 hover:bg-blue-200"
                                                     title="Change Role">
                                                 <span class="text-sm">👔</span>
@@ -445,8 +469,9 @@
                                                 </svg>
                                             </button>
                                             
-                                            <!-- Delete Staff -->
+                                            <!-- Delete Staff - Hide for Admin users -->
                                             <button @click="confirmDelete(staff)" 
+                                                   x-show="getRoleNameFromId(staff.roleId) !== 'Admin'"
                                                     class="action-btn w-7 h-7 bg-red-100 text-red-500 hover:bg-red-200"
                                                     title="Delete Staff">
                                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -463,7 +488,7 @@
             </div>
 
             <!-- No Results Message -->
-            <div x-show="filteredStaff.length === 0" class="text-center py-12">
+            <div x-show="!loading && filteredStaff.length === 0" class="text-center py-12">
                 <span class="text-5xl mb-3 block">👥</span>
                 <p class="text-lg text-[#3a5a78]">No staff found matching your filters</p>
                 <button @click="clearFilters()" class="mt-4 px-6 py-2 rounded-lg bg-[#0284a8] text-white hover:bg-[#03738C] transition text-sm font-medium">
@@ -472,7 +497,7 @@
             </div>
 
             <!-- Pagination with Items Per Page Selector -->
-            <div x-show="filteredStaff.length > 0" class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+            <div x-show="!loading && filteredStaff.length > 0" class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
                 <div class="flex items-center gap-2">
                     <span class="text-sm text-[#3a5a78]">Show:</span>
                     <select x-model="itemsPerPage" @change="currentPage = 1" 
@@ -525,7 +550,7 @@
                  @click.stop>
                 
                 <div class="flex justify-between items-start mb-4">
-                    <h3 class="text-xl font-bold text-[#1e3c5c]">Change Status: <span class="text-sm font-normal text-[#3a5a78] block" x-text="selectedStaff?.name"></span></h3>
+                    <h3 class="text-xl font-bold text-[#1e3c5c]">Change Status: <span class="text-sm font-normal text-[#3a5a78] block" x-text="selectedStaff?.fullname"></span></h3>
                     <button @click="showEditStatusModal = false" class="text-[#3a5a78] hover:text-[#1e3c5c]">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -581,7 +606,7 @@
                  @click.stop>
                 
                 <div class="flex justify-between items-start mb-4">
-                    <h3 class="text-xl font-bold text-[#1e3c5c]">Change Role: <span class="text-sm font-normal text-[#3a5a78] block" x-text="selectedStaff?.name"></span></h3>
+                    <h3 class="text-xl font-bold text-[#1e3c5c]">Change Role: <span class="text-sm font-normal text-[#3a5a78] block" x-text="selectedStaff?.fullname"></span></h3>
                     <button @click="showEditRoleModal = false" class="text-[#3a5a78] hover:text-[#1e3c5c]">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -590,30 +615,28 @@
                 </div>
                 
                 <form @submit.prevent="updateStaffRole()" class="space-y-4">
-                    <!-- Role -->
+                    <!-- Role - Hide Admin option -->
                     <div>
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-2">Select Role</label>
                         <div class="grid grid-cols-2 gap-3">
-                            <label class="flex items-center p-3 border rounded-lg cursor-pointer"
-                                   :class="editRoleData === 'Admin' ? 'border-[#0284a8] bg-purple-100' : 'border-[#b5e5e0]'">
-                                <input type="radio" value="Admin" x-model="editRoleData" class="mr-2">
-                                <span class="text-purple-700">Admin</span>
-                            </label>
-                            <label class="flex items-center p-3 border rounded-lg cursor-pointer"
-                                   :class="editRoleData === 'Manager' ? 'border-[#0284a8] bg-blue-100' : 'border-[#b5e5e0]'">
-                                <input type="radio" value="Manager" x-model="editRoleData" class="mr-2">
-                                <span class="text-blue-700">Manager</span>
-                            </label>
-                            <label class="flex items-center p-3 border rounded-lg cursor-pointer"
-                                   :class="editRoleData === 'Supervisor' ? 'border-[#0284a8] bg-green-100' : 'border-[#b5e5e0]'">
-                                <input type="radio" value="Supervisor" x-model="editRoleData" class="mr-2">
-                                <span class="text-green-700">Supervisor</span>
-                            </label>
-                            <label class="flex items-center p-3 border rounded-lg cursor-pointer"
-                                   :class="editRoleData === 'Staff' ? 'border-[#0284a8] bg-orange-100' : 'border-[#b5e5e0]'">
-                                <input type="radio" value="Staff" x-model="editRoleData" class="mr-2">
-                                <span class="text-orange-700">Staff</span>
-                            </label>
+                            <template x-for="role in roles" :key="role.id">
+                                <!-- Skip Admin role (assuming Admin has name 'Admin') -->
+                                <label x-show="role.name !== 'Admin'" 
+                                       class="flex items-center p-3 border rounded-lg cursor-pointer"
+                                       :class="editRoleData === role.id.toString() ? 'border-[#0284a8] ' + 
+                                               (role.name === 'Admin' ? 'bg-purple-100' : 
+                                                role.name === 'Manager' ? 'bg-blue-100' : 
+                                                role.name === 'Supervisor' ? 'bg-green-100' : 'bg-orange-100') : 
+                                               'border-[#b5e5e0]'">
+                                    <input type="radio" :value="role.id" x-model="editRoleData" class="mr-2">
+                                    <span :class="{
+                                        'text-purple-700': role.name === 'Admin',
+                                        'text-blue-700': role.name === 'Manager',
+                                        'text-green-700': role.name === 'Supervisor',
+                                        'text-orange-700': role.name === 'Staff'
+                                    }" x-text="role.name"></span>
+                                </label>
+                            </template>
                         </div>
                     </div>
 
@@ -666,7 +689,7 @@
                         <!-- Name -->
                         <div>
                             <p class="text-sm text-[#3a5a78]">Full Name</p>
-                            <p class="font-medium text-[#1e3c5c]" x-text="selectedStaff?.name"></p>
+                            <p class="font-medium text-[#1e3c5c]" x-text="selectedStaff?.fullname"></p>
                         </div>
                         
                         <!-- Username -->
@@ -705,12 +728,12 @@
                             <p class="font-medium">
                                 <span class="role-badge"
                                       :class="{
-                                          'bg-purple-100 text-purple-700': selectedStaff?.role === 'Admin',
-                                          'bg-blue-100 text-blue-700': selectedStaff?.role === 'Manager',
-                                          'bg-green-100 text-green-700': selectedStaff?.role === 'Supervisor',
-                                          'bg-orange-100 text-orange-700': selectedStaff?.role === 'Staff'
+                                          'bg-purple-100 text-purple-700': getRoleNameFromId(selectedStaff?.roleId) === 'Admin',
+                                          'bg-blue-100 text-blue-700': getRoleNameFromId(selectedStaff?.roleId) === 'Manager',
+                                          'bg-green-100 text-green-700': getRoleNameFromId(selectedStaff?.roleId) === 'Supervisor',
+                                          'bg-orange-100 text-orange-700': getRoleNameFromId(selectedStaff?.roleId) === 'Staff'
                                       }">
-                                    <span x-text="selectedStaff?.role"></span>
+                                    <span x-text="getRoleNameFromId(selectedStaff?.roleId)"></span>
                                 </span>
                             </p>
                         </div>
@@ -780,7 +803,7 @@
                 
                 <h3 class="text-xl font-bold text-[#1e3c5c] text-center mb-2">Delete Staff</h3>
                 <p class="text-[#3a5a78] text-center mb-6">
-                    Are you sure you want to delete staff "<span class="font-semibold" x-text="selectedStaff?.name"></span>"? This action cannot be undone.
+                    Are you sure you want to delete staff "<span class="font-semibold" x-text="selectedStaff?.fullname"></span>"? This action cannot be undone.
                 </p>
                 
                 <div class="flex gap-3">
@@ -801,99 +824,9 @@
     <script>
         function staffManager() {
             return {
-                // Sample staff data
-                staff: [
-                    { 
-                        id: 1, 
-                        regNo: 'STF-00001',
-                        name: 'John Doe',
-                        username: 'johndoe',
-                        email: 'john.doe@oceanview.com',
-                        phone: '+94 77 123 4567',
-                        address: '123 Main Street, Colombo 03, Sri Lanka',
-                        password: 'password123',
-                        role: 'Admin',
-                        status: 'active',
-                        lastLogin: '2025-06-15 09:30',
-                        joinedDate: '2024-01-15',
-                        updatedDate: '2025-05-20'
-                    },
-                    { 
-                        id: 2, 
-                        regNo: 'STF-00002',
-                        name: 'Jane Smith',
-                        username: 'janesmith',
-                        email: 'jane.smith@oceanview.com',
-                        phone: '+94 77 234 5678',
-                        address: '45 Beach Road, Mount Lavinia, Sri Lanka',
-                        password: 'password123',
-                        role: 'Manager',
-                        status: 'active',
-                        lastLogin: '2025-06-14 14:15',
-                        joinedDate: '2024-03-20',
-                        updatedDate: '2025-05-18'
-                    },
-                    { 
-                        id: 3, 
-                        regNo: 'STF-00003',
-                        name: 'Michael Johnson',
-                        username: 'michaelj',
-                        email: 'michael.j@oceanview.com',
-                        phone: '+94 77 345 6789',
-                        address: '78 Park Avenue, Nugegoda, Sri Lanka',
-                        password: 'password123',
-                        role: 'Supervisor',
-                        status: 'active',
-                        lastLogin: '2025-06-13 10:45',
-                        joinedDate: '2024-06-10',
-                        updatedDate: '2025-05-15'
-                    },
-                    { 
-                        id: 4, 
-                        regNo: 'STF-00004',
-                        name: 'Sarah Williams',
-                        username: 'sarahw',
-                        email: 'sarah.w@oceanview.com',
-                        phone: '+94 77 456 7890',
-                        address: '23 Lake Drive, Kandy, Sri Lanka',
-                        password: 'password123',
-                        role: 'Staff',
-                        status: 'active',
-                        lastLogin: '2025-06-15 08:30',
-                        joinedDate: '2024-09-05',
-                        updatedDate: '2025-05-10'
-                    },
-                    { 
-                        id: 5, 
-                        regNo: 'STF-00005',
-                        name: 'David Brown',
-                        username: 'davidb',
-                        email: 'david.b@oceanview.com',
-                        phone: '+94 77 567 8901',
-                        address: '67 Hill Street, Galle, Sri Lanka',
-                        password: 'password123',
-                        role: 'Staff',
-                        status: 'inactive',
-                        lastLogin: '2025-06-01 16:20',
-                        joinedDate: '2024-11-12',
-                        updatedDate: '2025-06-01'
-                    },
-                    { 
-                        id: 6, 
-                        regNo: 'STF-00006',
-                        name: 'Emily Davis',
-                        username: 'emilyd',
-                        email: 'emily.d@oceanview.com',
-                        phone: '+94 77 678 9012',
-                        address: '89 Ocean Drive, Bentota, Sri Lanka',
-                        password: 'password123',
-                        role: 'Staff',
-                        status: 'active',
-                        lastLogin: '2025-06-14 11:30',
-                        joinedDate: '2025-02-18',
-                        updatedDate: '2025-05-25'
-                    }
-                ],
+                // Staff data (will be loaded from server)
+                staff: [],
+                roles: [],
                 
                 searchQuery: '',
                 statusFilter: 'all',
@@ -912,18 +845,79 @@
                 
                 selectedStaff: null,
                 editStatusData: 'active',
-                editRoleData: 'Staff',
+                editRoleData: '2', // Default role ID (Staff)
+                
+                // Loading state
+                loading: false,
+                
+                // Initialize component
+                init: function() {
+                    var self = this;
+                    
+                    // Reset to first page when filters change
+                    this.$watch('filteredStaff', function() {
+                        self.currentPage = 1;
+                    });
+                    
+                    // Load data
+                    this.loadStaff();
+                    this.loadRoles();
+                },
+                
+                // Load staff from server
+                loadStaff: function() {
+                    var self = this;
+                    this.loading = true;
+                    
+                    fetch(contextPath + '/staff/api/list')
+                        .then(response => response.json())
+                        .then(data => {
+                            self.staff = data;
+                            self.loading = false;
+                            console.log('Staff loaded:', data);
+                        })
+                        .catch(error => {
+                            console.error('Error loading staff:', error);
+                            if (window.showError) {
+                                window.showError('Failed to load staff data', 3000);
+                            }
+                            self.loading = false;
+                        });
+                },
+                
+                // Load roles from server
+                loadRoles: function() {
+                    var self = this;
+                    
+                    fetch(contextPath + '/roles/api/list')
+                        .then(response => response.json())
+                        .then(data => {
+                            self.roles = data;
+                            console.log('Roles loaded:', data);
+                        })
+                        .catch(error => {
+                            console.error('Error loading roles:', error);
+                        });
+                },
                 
                 // Get role counts for dropdown
                 getRoleCounts: function() {
                     var counts = {};
-                    this.staff.forEach(function(staff) {
-                        if (counts[staff.role]) {
-                            counts[staff.role]++;
-                        } else {
-                            counts[staff.role] = 1;
-                        }
+                    
+                    // Initialize with all roles from roles array
+                    this.roles.forEach(function(role) {
+                        counts[role.name] = 0;
                     });
+                    
+                    // Count staff by role
+                    this.staff.forEach(function(staff) {
+                        var roleName = this.getRoleNameFromId(staff.roleId);
+                        if (counts[roleName]) {
+                            counts[roleName]++;
+                        } else {
+                            counts[roleName] = 1;
+                        }
+                    }.bind(this));
                     
                     // Convert to array and sort by count
                     var result = [];
@@ -936,15 +930,29 @@
                     return result.sort(function(a, b) { return b.count - a.count; });
                 },
                 
+                // Get role ID from role name
+                getRoleIdFromName: function(roleName) {
+                    var role = this.roles.find(r => r.name === roleName);
+                    return role ? role.id : 2; // Default to 2 (Staff)
+                },
+                
+                // Get role name from role ID
+                getRoleNameFromId: function(roleId) {
+                    var role = this.roles.find(r => r.id === roleId);
+                    return role ? role.name : 'Staff';
+                },
+                
+                // Filtered staff based on search and filters
                 get filteredStaff() {
+                    var self = this;
                     return this.staff.filter(staff => {
-                        // Search filter - only regno, name, username, email
+                        // Search filter - regno, name, username, email
                         if (this.searchQuery) {
                             var query = this.searchQuery.toLowerCase();
-                            var matchesSearch = staff.regNo.toLowerCase().includes(query) ||
-                                                staff.name.toLowerCase().includes(query) ||
-                                                staff.username.toLowerCase().includes(query) ||
-                                                staff.email.toLowerCase().includes(query);
+                            var matchesSearch = (staff.regNo && staff.regNo.toLowerCase().includes(query)) ||
+                                                (staff.fullname && staff.fullname.toLowerCase().includes(query)) ||
+                                                (staff.username && staff.username.toLowerCase().includes(query)) ||
+                                                (staff.email && staff.email.toLowerCase().includes(query));
                             if (!matchesSearch) return false;
                         }
                         
@@ -953,39 +961,69 @@
                             return false;
                         }
                         
-                        // Role filter
-                        if (this.roleFilter !== 'all' && staff.role !== this.roleFilter) {
-                            return false;
+                        // Role filter - compare role name
+                        if (this.roleFilter !== 'all') {
+                            var roleName = this.getRoleNameFromId(staff.roleId);
+                            if (roleName !== this.roleFilter) return false;
                         }
                         
                         // Joined date filters
-                        var joinedDate = new Date(staff.joinedDate);
-                        
-                        // Month filter
-                        if (this.joinedMonthFilter !== 'all') {
-                            var month = (joinedDate.getMonth() + 1).toString();
-                            if (month.length === 1) month = '0' + month;
-                            if (month !== this.joinedMonthFilter) return false;
-                        }
-                        
-                        // Year filter
-                        if (this.joinedYearFilter !== 'all') {
-                            var year = joinedDate.getFullYear().toString();
-                            if (year !== this.joinedYearFilter) return false;
+                        if (staff.joinedDate) {
+                            var joinedDate = new Date(staff.joinedDate);
+                            
+                            // Month filter
+                            if (this.joinedMonthFilter !== 'all') {
+                                var month = (joinedDate.getMonth() + 1).toString();
+                                if (month.length === 1) month = '0' + month;
+                                if (month !== this.joinedMonthFilter) return false;
+                            }
+                            
+                            // Year filter
+                            if (this.joinedYearFilter !== 'all') {
+                                var year = joinedDate.getFullYear().toString();
+                                if (year !== this.joinedYearFilter) return false;
+                            }
                         }
                         
                         return true;
                     });
                 },
                 
+                // Add role name to staff objects for display
+                get staffWithRoleName() {
+                    var self = this;
+                    return this.staff.map(staff => {
+                        return {
+                            ...staff,
+                            roleName: self.getRoleNameFromId(staff.roleId)
+                        };
+                    });
+                },
+                
                 get paginatedStaff() {
+                    var staffWithRoles = this.staffWithRoleName;
+                    var filtered = staffWithRoles.filter(staff => {
+                        // Apply filters again to ensure role name filter works
+                        if (this.roleFilter !== 'all' && staff.roleName !== this.roleFilter) {
+                            return false;
+                        }
+                        return true;
+                    });
+                    
                     var start = (this.currentPage - 1) * this.itemsPerPage;
                     var end = start + this.itemsPerPage;
-                    return this.filteredStaff.slice(start, end);
+                    return filtered.slice(start, end);
                 },
                 
                 get totalPages() {
-                    return Math.ceil(this.filteredStaff.length / this.itemsPerPage);
+                    var staffWithRoles = this.staffWithRoleName;
+                    var filtered = staffWithRoles.filter(staff => {
+                        if (this.roleFilter !== 'all' && staff.roleName !== this.roleFilter) {
+                            return false;
+                        }
+                        return true;
+                    });
+                    return Math.ceil(filtered.length / this.itemsPerPage);
                 },
                 
                 // Count methods
@@ -998,22 +1036,7 @@
                 },
                 
                 getRolesCount: function() {
-                    var roles = {};
-                    this.staff.forEach(function(staff) {
-                        roles[staff.role] = true;
-                    });
-                    return Object.keys(roles).length;
-                },
-                
-                init: function() {
-                    var self = this;
-                    
-                    // Reset to first page when filters change
-                    this.$watch('filteredStaff', function() {
-                        self.currentPage = 1;
-                    });
-                    
-                    console.log('Staff Manager initialized');
+                    return this.roles.length;
                 },
                 
                 formatDate: function(dateString) {
@@ -1035,47 +1058,103 @@
                     this.showEditStatusModal = true;
                 },
                 
-                // Update status
+                // Update status via API
                 updateStaffStatus: function() {
                     var self = this;
+                    var staffId = this.selectedStaff.id; // Store ID before any potential null
+                    var newStatus = this.editStatusData;
                     
-                    var index = this.staff.findIndex(function(s) { return s.id === self.selectedStaff.id; });
-                    if (index !== -1) {
-                        this.staff[index].status = this.editStatusData;
-                        this.staff[index].updatedDate = new Date().toISOString().split('T')[0];
-                        
-                        if (window.showSuccess) {
-                            window.showSuccess('Staff status updated successfully', 3000);
+                    fetch(contextPath + '/staff/api/' + staffId + '?action=status', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            status: newStatus
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update local data
+                            var index = self.staff.findIndex(s => s.id === staffId);
+                            if (index !== -1) {
+                                self.staff[index].status = newStatus;
+                            }
+                            
+                            if (window.showSuccess) {
+                                window.showSuccess(data.message, 3000);
+                            }
+                        } else {
+                            if (window.showError) {
+                                window.showError(data.message, 3000);
+                            }
                         }
-                    }
-                    
-                    this.showEditStatusModal = false;
-                    this.selectedStaff = null;
+                    })
+                    .catch(error => {
+                        console.error('Error updating status:', error);
+                        if (window.showError) {
+                            window.showError('Failed to update status', 3000);
+                        }
+                    })
+                    .finally(() => {
+                        // Close modal only after API call completes
+                        self.showEditStatusModal = false;
+                        self.selectedStaff = null;
+                    });
                 },
                 
                 // Edit role
                 editRole: function(staff) {
                     this.selectedStaff = staff;
-                    this.editRoleData = staff.role;
+                    this.editRoleData = staff.roleId.toString();
                     this.showEditRoleModal = true;
                 },
                 
-                // Update role
+                // Update role via API
                 updateStaffRole: function() {
                     var self = this;
+                    var staffId = this.selectedStaff.id; // Store ID before any potential null
+                    var newRoleId = parseInt(this.editRoleData);
                     
-                    var index = this.staff.findIndex(function(s) { return s.id === self.selectedStaff.id; });
-                    if (index !== -1) {
-                        this.staff[index].role = this.editRoleData;
-                        this.staff[index].updatedDate = new Date().toISOString().split('T')[0];
-                        
-                        if (window.showSuccess) {
-                            window.showSuccess('Staff role updated successfully', 3000);
+                    fetch(contextPath + '/staff/api/' + staffId + '?action=role', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            roleId: newRoleId
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update local data
+                            var index = self.staff.findIndex(s => s.id === staffId);
+                            if (index !== -1) {
+                                self.staff[index].roleId = newRoleId;
+                            }
+                            
+                            if (window.showSuccess) {
+                                window.showSuccess(data.message, 3000);
+                            }
+                        } else {
+                            if (window.showError) {
+                                window.showError(data.message, 3000);
+                            }
                         }
-                    }
-                    
-                    this.showEditRoleModal = false;
-                    this.selectedStaff = null;
+                    })
+                    .catch(error => {
+                        console.error('Error updating role:', error);
+                        if (window.showError) {
+                            window.showError('Failed to update role', 3000);
+                        }
+                    })
+                    .finally(() => {
+                        // Close modal only after API call completes
+                        self.showEditRoleModal = false;
+                        self.selectedStaff = null;
+                    });
                 },
                 
                 // View staff details
@@ -1090,25 +1169,49 @@
                     this.showDeleteModal = true;
                 },
                 
-                // Delete staff
+                // Delete staff via API
                 deleteStaff: function() {
                     var self = this;
-                    var index = this.staff.findIndex(function(s) { return s.id === self.selectedStaff.id; });
-                    if (index !== -1) {
-                        this.staff.splice(index, 1);
-                        
-                        if (window.showSuccess) {
-                            window.showSuccess('Staff deleted successfully', 3000);
+                    var staffId = this.selectedStaff.id; // Store ID before any potential null
+                    var staffName = this.selectedStaff.fullname; // Store name for message
+                    
+                    fetch(contextPath + '/staff/api/' + staffId, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Remove from local data
+                            var index = self.staff.findIndex(s => s.id === staffId);
+                            if (index !== -1) {
+                                self.staff.splice(index, 1);
+                            }
+                            
+                            if (window.showSuccess) {
+                                window.showSuccess(data.message, 3000);
+                            }
+                            
+                            // Adjust current page if necessary
+                            if (self.paginatedStaff.length === 0 && self.currentPage > 1) {
+                                self.currentPage--;
+                            }
+                        } else {
+                            if (window.showError) {
+                                window.showError(data.message, 3000);
+                            }
                         }
-                    }
-                    
-                    this.showDeleteModal = false;
-                    this.selectedStaff = null;
-                    
-                    // Adjust current page if necessary
-                    if (this.paginatedStaff.length === 0 && this.currentPage > 1) {
-                        this.currentPage--;
-                    }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting staff:', error);
+                        if (window.showError) {
+                            window.showError('Failed to delete staff', 3000);
+                        }
+                    })
+                    .finally(() => {
+                        // Close modal only after API call completes
+                        self.showDeleteModal = false;
+                        self.selectedStaff = null;
+                    });
                 },
                 
                 clearFilters: function() {
@@ -1149,6 +1252,10 @@
                 }
             }
         }
+        
+        // Get context path for API calls
+        var contextPath = window.location.pathname.substring(0, window.location.pathname.indexOf('/', 2));
+        if (contextPath === '') contextPath = '';
     </script>
 </body>
 </html>
