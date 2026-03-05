@@ -46,6 +46,26 @@
             max-width: 400px;
             padding: 1.5rem;
         }
+
+        /* Loading spinner */
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0284a8;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .btn-loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body class="login-bg">
@@ -69,7 +89,7 @@
                 <p class="text-[#3a5a78] text-base mt-2">Sign in to continue to Ocean View Resort</p>
             </div>
 
-            <form id="loginForm" action="#" method="post" class="space-y-5" onsubmit="return handleLogin(event)">
+            <form id="loginForm" method="post" class="space-y-5" onsubmit="return handleLogin(event)">
                 
                 <!-- username / email field -->
                 <div>
@@ -106,9 +126,10 @@
                 </div>
 
                 <!-- login button -->
-                <button type="submit" 
+                <button type="submit" id="loginBtn"
                         class="w-full bg-gradient-to-r from-[#0284a8] to-[#03738C] hover:from-[#03738C] hover:to-[#025c73] text-white font-semibold py-3.5 px-6 rounded-xl text-base transition-all transform hover:scale-[1.01] shadow-lg flex items-center justify-center gap-2">
-                    <span>🔑</span> Sign In
+                    <span id="btn-icon">🔑</span> 
+                    <span id="btn-text">Sign In</span>
                 </button>
 
                 <!-- register link -->
@@ -146,6 +167,51 @@
 
     <!-- Login handling script -->
     <script>
+        // Check if user is already logged in (has token)
+        (function checkExistingLogin() {
+            const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+            if (token) {
+                // Verify token with server
+                fetch('${pageContext.request.contextPath}/guests/api/verify-token', {
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.valid) {
+                        // Token is valid, redirect to home
+                        window.location.href = 'index.jsp';
+                    } else {
+                        // Token invalid, clear storage
+                        localStorage.removeItem('authToken');
+                        localStorage.removeItem('guestId');
+                        localStorage.removeItem('guestName');
+                        localStorage.removeItem('guestEmail');
+                        localStorage.removeItem('guestRegNo');
+                        sessionStorage.removeItem('authToken');
+                        sessionStorage.removeItem('guestId');
+                        sessionStorage.removeItem('guestName');
+                        sessionStorage.removeItem('guestEmail');
+                        sessionStorage.removeItem('guestRegNo');
+                    }
+                })
+                .catch(() => {
+                    // Error verifying token, clear storage
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('guestId');
+                    localStorage.removeItem('guestName');
+                    localStorage.removeItem('guestEmail');
+                    localStorage.removeItem('guestRegNo');
+                    sessionStorage.removeItem('authToken');
+                    sessionStorage.removeItem('guestId');
+                    sessionStorage.removeItem('guestName');
+                    sessionStorage.removeItem('guestEmail');
+                    sessionStorage.removeItem('guestRegNo');
+                });
+            }
+        })();
+
         function togglePasswordVisibility(fieldId) {
             const field = document.getElementById(fieldId);
             const eyeSpan = document.getElementById(fieldId + '-eye');
@@ -156,6 +222,25 @@
             } else {
                 field.type = 'password';
                 eyeSpan.textContent = '👁️'; // open eye
+            }
+        }
+
+        // Show loading state on button
+        function setLoading(isLoading) {
+            const btn = document.getElementById('loginBtn');
+            const btnIcon = document.getElementById('btn-icon');
+            const btnText = document.getElementById('btn-text');
+            
+            if (isLoading) {
+                btn.classList.add('btn-loading');
+                btnIcon.innerHTML = '<span class="loading-spinner"></span>';
+                btnText.textContent = 'Signing In...';
+                btn.disabled = true;
+            } else {
+                btn.classList.remove('btn-loading');
+                btnIcon.innerHTML = '🔑';
+                btnText.textContent = 'Sign In';
+                btn.disabled = false;
             }
         }
         
@@ -172,25 +257,104 @@
                 return false;
             }
             
-            // Show loading/info message
-            showInfo('Verifying credentials...', 2000);
+            // Show loading state
+            setLoading(true);
+            showInfo('Verifying credentials...', 0);
             
-            // Simulate login process
-            setTimeout(() => {
-                showSuccess('Login successful! Welcome back, ' + username.split('@')[0] + '!');
+            // Prepare login data
+            const loginData = {
+                username: username,
+                password: password
+            };
+            
+            // Make API call to login
+            fetch('${pageContext.request.contextPath}/guests/api/login', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(loginData)
+            })
+            .then(async response => {
+                const text = await response.text();
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    throw new Error('Invalid server response');
+                }
                 
-                // Clear form
-                document.getElementById('loginForm').reset();
+                if (!response.ok) {
+                    throw data;
+                }
+                return data;
+            })
+            .then(data => {
+                setLoading(false);
                 
-                // Reset eye icons
-                document.getElementById('password-eye').textContent = '👁️';
+                if (data.success) {
+                    // Store token and user info
+                    if (data.token) {
+                        // Store in localStorage for persistence across sessions
+                        localStorage.setItem('authToken', data.token);
+                        localStorage.setItem('guestId', data.guestId);
+                        localStorage.setItem('guestName', data.guestName);
+                        localStorage.setItem('guestEmail', data.guestEmail);
+                        localStorage.setItem('guestRegNo', data.guestRegNo);
+                        
+                        // Also store in sessionStorage for current session
+                        sessionStorage.setItem('authToken', data.token);
+                        sessionStorage.setItem('guestId', data.guestId);
+                        sessionStorage.setItem('guestName', data.guestName);
+                        sessionStorage.setItem('guestEmail', data.guestEmail);
+                        sessionStorage.setItem('guestRegNo', data.guestRegNo);
+                    }
+                    
+                    showSuccess('Login successful! Welcome back, ' + (data.guestName || username.split('@')[0]) + '!');
+                    
+                    // Clear form
+                    document.getElementById('loginForm').reset();
+                    
+                    // Reset eye icon
+                    document.getElementById('password-eye').textContent = '👁️';
+                    
+                    // Redirect to index.jsp after 1.5 seconds
+                    setTimeout(() => {
+                        window.location.href = 'index.jsp';
+                    }, 1500);
+                } else {
+                    showError(data.message || 'Login failed. Please try again.');
+                }
+            })
+            .catch(error => {
+                setLoading(false);
+                console.error('Login error:', error);
                 
-                // Optional: redirect after login
-                 window.location.href = 'dashboard.jsp';
-            }, 1500);
+                let errorMessage = 'An error occurred during login.';
+                if (error && error.message) {
+                    errorMessage = error.message;
+                } else if (error && typeof error === 'string') {
+                    errorMessage = error;
+                }
+                
+                showError(errorMessage);
+            });
             
             return false;
         }
+
+        // Check for registration success message
+        window.addEventListener('load', function() {
+            if (sessionStorage.getItem('registrationSuccess') === 'true') {
+                const email = sessionStorage.getItem('registeredEmail');
+                showSuccess('Registration successful! Please login with your credentials.');
+                if (email) {
+                    document.getElementById('username').value = email;
+                }
+                sessionStorage.removeItem('registrationSuccess');
+                sessionStorage.removeItem('registeredEmail');
+            }
+        });
     </script>
 </body>
 </html>

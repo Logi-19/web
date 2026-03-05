@@ -36,7 +36,7 @@ public class ManageStaffDAO {
         staff.setPhone(rs.getString("phone"));
         staff.setGender(rs.getString("gender"));
         staff.setAddress(rs.getString("address"));
-        staff.setPassword(rs.getString("password"));
+        staff.setPassword(rs.getString("password")); // This is the hashed password
         staff.setRoleId(rs.getInt("role_id"));
         staff.setStatus(rs.getString("status"));
         staff.setJoinedDate(rs.getDate("joined_date").toLocalDate());
@@ -54,7 +54,7 @@ public class ManageStaffDAO {
         return staff;
     }
     
-    // Create (INSERT)
+    // Create (INSERT) - Stores hashed password
     public boolean save(ManageStaff staff) {
         String sql = "INSERT INTO manage_staff (reg_no, fullname, username, email, phone, gender, address, password, role_id, status, joined_date, last_login, updated_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
@@ -66,7 +66,7 @@ public class ManageStaffDAO {
             stmt.setString(5, staff.getPhone());
             stmt.setString(6, staff.getGender());
             stmt.setString(7, staff.getAddress());
-            stmt.setString(8, staff.getPassword());
+            stmt.setString(8, staff.getPassword()); // Store hashed password
             stmt.setInt(9, staff.getRoleId());
             stmt.setString(10, staff.getStatus());
             stmt.setDate(11, Date.valueOf(staff.getJoinedDate()));
@@ -326,12 +326,12 @@ public class ManageStaffDAO {
         return false;
     }
     
-    // Update password only
-    public boolean updatePassword(int id, String newPassword) {
+    // Update password only - stores hashed password
+    public boolean updatePassword(int id, String hashedPassword) {
         String sql = "UPDATE manage_staff SET password = ?, updated_date = ? WHERE id = ?";
         
         try (PreparedStatement stmt = connection.prepareStatement(sql)) {
-            stmt.setString(1, newPassword);
+            stmt.setString(1, hashedPassword);
             stmt.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
             stmt.setInt(3, id);
             
@@ -538,5 +538,22 @@ public class ManageStaffDAO {
             e.printStackTrace();
         }
         return false;
+    }
+    
+    // Get password hash for a staff member
+    public String getPasswordHash(int id) {
+        String sql = "SELECT password FROM manage_staff WHERE id = ?";
+        
+        try (PreparedStatement stmt = connection.prepareStatement(sql)) {
+            stmt.setInt(1, id);
+            ResultSet rs = stmt.executeQuery();
+            
+            if (rs.next()) {
+                return rs.getString("password");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 }

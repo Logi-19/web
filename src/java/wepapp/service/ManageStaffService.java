@@ -8,6 +8,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.regex.Pattern;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.Base64;
 
 // Strategy Pattern - Validation Strategy Interfaces
 interface StaffValidationStrategy {
@@ -201,11 +205,32 @@ class StaffRoleStrategy implements StaffValidationStrategy {
     }
 }
 
+// Inner class for login session
+class LoginSession {
+    int staffId;
+    String staffName;
+    String regNo;
+    String role;
+    LocalDateTime loginTime;
+    
+    public LoginSession(int staffId, String staffName, String regNo, String role) {
+        this.staffId = staffId;
+        this.staffName = staffName;
+        this.regNo = regNo;
+        this.role = role;
+        this.loginTime = LocalDateTime.now();
+    }
+}
+
 // Main Service Class
 public class ManageStaffService {
     private final ManageStaffDAO staffDAO;
     private final RoleDAO roleDAO;
     private final List<StaffValidationStrategy> validators;
+    
+    // Password hashing constants
+    private static final int SALT_LENGTH = 16;
+    private static final String HASH_ALGORITHM = "SHA-256";
     
     public ManageStaffService() {
         this.staffDAO = ManageStaffDAO.getInstance();
@@ -223,6 +248,58 @@ public class ManageStaffService {
         );
     }
     
+    // Password hashing methods
+    private String hashPassword(String password) {
+        try {
+            // Generate salt
+            SecureRandom random = new SecureRandom();
+            byte[] salt = new byte[SALT_LENGTH];
+            random.nextBytes(salt);
+            
+            // Hash password with salt
+            MessageDigest md = MessageDigest.getInstance(HASH_ALGORITHM);
+            md.update(salt);
+            byte[] hashedPassword = md.digest(password.getBytes());
+            
+            // Combine salt and hashed password
+            byte[] combined = new byte[salt.length + hashedPassword.length];
+            System.arraycopy(salt, 0, combined, 0, salt.length);
+            System.arraycopy(hashedPassword, 0, combined, salt.length, hashedPassword.length);
+            
+            // Encode to Base64 for storage
+            return Base64.getEncoder().encodeToString(combined);
+            
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException("Error hashing password", e);
+        }
+    }
+    
+    private boolean verifyPassword(String password, String storedHash) {
+        try {
+            // Decode from Base64
+            byte[] combined = Base64.getDecoder().decode(storedHash);
+            
+            // Extract salt (first SALT_LENGTH bytes)
+            byte[] salt = new byte[SALT_LENGTH];
+            System.arraycopy(combined, 0, salt, 0, SALT_LENGTH);
+            
+            // Extract stored hash
+            byte[] storedHashBytes = new byte[combined.length - SALT_LENGTH];
+            System.arraycopy(combined, SALT_LENGTH, storedHashBytes, 0, storedHashBytes.length);
+            
+            // Hash input password with same salt
+            MessageDigest md = MessageDigest.getInstance(HASH_ALGORITHM);
+            md.update(salt);
+            byte[] hashedPassword = md.digest(password.getBytes());
+            
+            // Compare byte arrays
+            return MessageDigest.isEqual(storedHashBytes, hashedPassword);
+            
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
     // Validate staff using all strategies
     public ValidationResult validateStaff(ManageStaff staff) {
         for (StaffValidationStrategy validator : validators) {
@@ -231,6 +308,35 @@ public class ManageStaffService {
             }
         }
         return new ValidationResult(true, "Validation successful");
+    }
+    
+    // Authenticate staff member
+    public ManageStaff authenticate(String username, String password) {
+        if (username == null || username.trim().isEmpty() || 
+            password == null || password.trim().isEmpty()) {
+            return null;
+        }
+        
+        // Get staff by username
+        ManageStaff staff = staffDAO.findByUsername(username);
+        if (staff == null) {
+            return null;
+        }
+        
+        // Check if account is active
+        if (!"active".equals(staff.getStatus())) {
+            return null;
+        }
+        
+        // Verify password
+        String storedHash = staffDAO.getPasswordHash(staff.getId());
+        if (storedHash != null && verifyPassword(password, storedHash)) {
+            // Don't return the password
+            staff.setPassword(null);
+            return staff;
+        }
+        
+        return null;
     }
     
     // Check if username exists
@@ -286,6 +392,9 @@ public class ManageStaffService {
             return new ValidationResult(false, "Phone number already exists");
         }
         
+        // Hash the password
+        String hashedPassword = hashPassword(staff.getPassword());
+        
         // Set defaults if not set
         if (staff.getJoinedDate() == null) {
             staff.setJoinedDate(LocalDate.now());
@@ -300,10 +409,15 @@ public class ManageStaffService {
         // Generate temporary regNo (will be updated after ID is generated)
         staff.setRegNo("TEMP");
         
+        // Set the hashed password
+        staff.setPassword(hashedPassword);
+        
         // Save to database
         boolean saved = staffDAO.save(staff);
         
         if (saved) {
+            // Clear password from object before returning
+            staff.setPassword(null);
             return new ValidationResult(true, "Staff member created successfully. Registration No: " + staff.getRegNo());
         } else {
             return new ValidationResult(false, "Failed to create staff member");
@@ -352,7 +466,7 @@ public class ManageStaffService {
         
         // Preserve fields that shouldn't be updated through this method
         staff.setRegNo(existingStaff.getRegNo());
-        staff.setPassword(existingStaff.getPassword());
+        staff.setPassword(existingStaff.getPassword()); // Keep existing password
         staff.setRoleId(existingStaff.getRoleId());
         staff.setStatus(existingStaff.getStatus());
         staff.setJoinedDate(existingStaff.getJoinedDate());
@@ -379,8 +493,11 @@ public class ManageStaffService {
             return new ValidationResult(false, passwordValidator.getErrorMessage());
         }
         
+        // Hash the new password
+        String hashedPassword = hashPassword(newPassword);
+        
         // Update in database
-        boolean updated = staffDAO.updatePassword(id, newPassword);
+        boolean updated = staffDAO.updatePassword(id, hashedPassword);
         
         if (updated) {
             return new ValidationResult(true, "Password updated successfully");
@@ -428,57 +545,102 @@ public class ManageStaffService {
     
     // Get all staff members
     public List<ManageStaff> getAllStaff() {
-        return staffDAO.findAll();
+        List<ManageStaff> staffList = staffDAO.findAll();
+        // Clear sensitive data
+        for (ManageStaff staff : staffList) {
+            staff.setPassword(null);
+        }
+        return staffList;
     }
     
     // Get staff by ID
     public ManageStaff getStaffById(int id) {
-        return staffDAO.findById(id);
+        ManageStaff staff = staffDAO.findById(id);
+        if (staff != null) {
+            staff.setPassword(null);
+        }
+        return staff;
     }
     
     // Get staff by registration number
     public ManageStaff getStaffByRegNo(String regNo) {
-        return staffDAO.findByRegNo(regNo);
+        ManageStaff staff = staffDAO.findByRegNo(regNo);
+        if (staff != null) {
+            staff.setPassword(null);
+        }
+        return staff;
     }
     
     // Get staff by username
     public ManageStaff getStaffByUsername(String username) {
-        return staffDAO.findByUsername(username);
+        ManageStaff staff = staffDAO.findByUsername(username);
+        if (staff != null) {
+            staff.setPassword(null);
+        }
+        return staff;
     }
     
     // Get staff by email
     public ManageStaff getStaffByEmail(String email) {
-        return staffDAO.findByEmail(email);
+        ManageStaff staff = staffDAO.findByEmail(email);
+        if (staff != null) {
+            staff.setPassword(null);
+        }
+        return staff;
     }
     
     // Get staff by role ID
     public List<ManageStaff> getStaffByRoleId(int roleId) {
-        return staffDAO.findByRoleId(roleId);
+        List<ManageStaff> staffList = staffDAO.findByRoleId(roleId);
+        for (ManageStaff staff : staffList) {
+            staff.setPassword(null);
+        }
+        return staffList;
     }
     
     // Get staff by status
     public List<ManageStaff> getStaffByStatus(String status) {
-        return staffDAO.findByStatus(status);
+        List<ManageStaff> staffList = staffDAO.findByStatus(status);
+        for (ManageStaff staff : staffList) {
+            staff.setPassword(null);
+        }
+        return staffList;
     }
     
     // Search staff by keyword
     public List<ManageStaff> searchStaff(String keyword) {
-        return staffDAO.search(keyword);
+        List<ManageStaff> staffList = staffDAO.search(keyword);
+        for (ManageStaff staff : staffList) {
+            staff.setPassword(null);
+        }
+        return staffList;
     }
     
     // Get staff by date range
     public List<ManageStaff> getStaffByDateRange(LocalDate startDate, LocalDate endDate) {
-        return staffDAO.findByDateRange(startDate, endDate);
+        List<ManageStaff> staffList = staffDAO.findByDateRange(startDate, endDate);
+        for (ManageStaff staff : staffList) {
+            staff.setPassword(null);
+        }
+        return staffList;
     }
     
     // Get staff by month and year
     public List<ManageStaff> getStaffByMonthYear(int month, int year) {
-        return staffDAO.findByMonthYear(month, year);
+        List<ManageStaff> staffList = staffDAO.findByMonthYear(month, year);
+        for (ManageStaff staff : staffList) {
+            staff.setPassword(null);
+        }
+        return staffList;
     }
     
     // Get recent staff
     public List<ManageStaff> getRecentStaff(int limit) {
-        return staffDAO.findRecent(limit);
+        List<ManageStaff> staffList = staffDAO.findRecent(limit);
+        for (ManageStaff staff : staffList) {
+            staff.setPassword(null);
+        }
+        return staffList;
     }
     
     // Delete staff

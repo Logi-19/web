@@ -111,7 +111,7 @@
                     </a>
                     <a href="blogcategory.jsp" class="flex items-center gap-4 px-4 py-2.5 rounded-lg text-[#1e3c5c]/70 hover:bg-[#b5e5e0]/20 text-sm">
                         <img src="https://cdn-icons-png.flaticon.com/128/6114/6114045.png" alt="services" class="w-4 h-4">
-                        <span>Blog Category</span>
+                        <span>Category</span>
                     </a>
                 </div>
             </div>

@@ -148,7 +148,7 @@
         <header class="bg-white/70 backdrop-blur-sm border-b border-[#b5e5e0] py-4 px-8 flex justify-between items-center sticky top-0 z-10">
             <div class="flex items-center gap-2 text-[#1e3c5c]">
                 <span class="text-xl">📚</span>
-                <span class="font-semibold">Blog Category Management</span>
+                <span class="font-semibold">Blog & Gallery Category Management</span>
             </div>
             <div class="flex items-center gap-3">
                 <span class="bg-[#0284a8] text-white text-xs px-3 py-1.5 rounded-full" x-text="`${categories.length} categories`"></span>
@@ -161,8 +161,8 @@
             <!-- Header with title and new category button -->
             <div class="flex justify-between items-center">
                 <div>
-                    <h2 class="text-2xl md:text-3xl font-bold text-[#1e3c5c]">Manage Blog Categories 📚</h2>
-                    <p class="text-[#3a5a78] text-base mt-1">Add, edit and manage blog post categories</p>
+                    <h2 class="text-2xl md:text-3xl font-bold text-[#1e3c5c]">Manage Blog & Gallery Categories 📚</h2>
+                    <p class="text-[#3a5a78] text-base mt-1">Add, edit and manage Blog & Gallery post categories</p>
                 </div>
                 <button @click="openNewCategoryModal()" 
                         class="px-4 py-2 rounded-lg bg-[#0284a8] text-white hover:bg-[#03738C] transition text-sm font-medium flex items-center gap-2">

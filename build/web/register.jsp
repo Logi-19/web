@@ -109,16 +109,62 @@
         .eye-icon:hover {
             opacity: 0.8;
         }
+
+        /* Loading spinner */
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0284a8;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .btn-loading {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        /* Debug panel (hidden by default) */
+        .debug-panel {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.8);
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 12px;
+            max-width: 400px;
+            max-height: 300px;
+            overflow: auto;
+            z-index: 9999;
+            display: none;
+        }
+        .debug-panel.show {
+            display: block;
+        }
     </style>
 </head>
 <body class="register-bg">
     
+    <!-- Debug Panel (press F2 to toggle) -->
+    <div id="debugPanel" class="debug-panel">
+        <strong>Debug Log</strong>
+        <div id="debugLog"></div>
+    </div>
+
     <!-- Include Notification Component -->
     <jsp:include page="component/notification.jsp" />
 
     <!-- ===== REGISTER FORM SECTION ===== -->
     <div class="register-content">
-        
         
         <!-- REGISTER CARD -->
         <div class="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl p-6 md:p-8 border border-white/20 relative overflow-hidden">
@@ -133,7 +179,7 @@
                 <p class="text-[#3a5a78] text-base mt-2">Join Ocean View Resort family and enjoy exclusive benefits</p>
             </div>
 
-            <form id="registerForm" action="#" method="post" class="space-y-4 scrollable-form" onsubmit="return handleRegister(event)">
+            <form id="registerForm" method="post" class="space-y-4 scrollable-form" onsubmit="return handleRegister(event)">
                 
                 <!-- Full Name and Username in one row -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -158,9 +204,11 @@
                         <div class="relative">
                             <input type="text" id="username" name="username" required 
                                    class="w-full pl-11 pr-5 py-3.5 rounded-xl border-2 border-[#d1e7e3] focus:border-[#0284a8] outline-none transition bg-white/80 text-[#1e3c5c] placeholder-[#8fa8bc] text-base"
-                                   placeholder="johndoe123" oninput="validateField('username')">
+                                   placeholder="johndoe123" oninput="validateField('username')" onblur="checkUsernameAvailability()">
                         </div>
                         <div id="username-error" class="text-xs text-red-500 mt-1 hidden">Username must be at least 5 characters and can only contain letters, numbers, _ and -</div>
+                        <div id="username-taken" class="text-xs text-red-500 mt-1 hidden">Username is already taken</div>
+                        <div id="username-available" class="text-xs text-green-500 mt-1 hidden">Username is available</div>
                     </div>
                 </div>
 
@@ -174,9 +222,11 @@
                         <div class="relative">
                             <input type="email" id="email" name="email" required 
                                    class="w-full pl-11 pr-5 py-3.5 rounded-xl border-2 border-[#d1e7e3] focus:border-[#0284a8] outline-none transition bg-white/80 text-[#1e3c5c] placeholder-[#8fa8bc] text-base"
-                                   placeholder="john@example.com" oninput="validateField('email')">
+                                   placeholder="john@example.com" oninput="validateField('email')" onblur="checkEmailAvailability()">
                         </div>
                         <div id="email-error" class="text-xs text-red-500 mt-1 hidden">Please enter a valid email address</div>
+                        <div id="email-taken" class="text-xs text-red-500 mt-1 hidden">Email is already registered</div>
+                        <div id="email-available" class="text-xs text-green-500 mt-1 hidden">Email is available</div>
                     </div>
 
                     <!-- Phone Field -->
@@ -272,9 +322,10 @@
 
                 <!-- Create Account button (only) -->
                 <div class="mt-6">
-                    <button type="submit" 
+                    <button type="submit" id="registerBtn"
                             class="w-full bg-gradient-to-r from-[#0284a8] to-[#03738C] hover:from-[#03738C] hover:to-[#025c73] text-white font-semibold py-3.5 px-6 rounded-xl text-base transition-all transform hover:scale-[1.01] shadow-lg flex items-center justify-center gap-2">
-                        <span>📝</span> Create Account
+                        <span id="btn-icon">📝</span> 
+                        <span id="btn-text">Create Account</span>
                     </button>
                 </div>
 
@@ -306,6 +357,26 @@
 
     <!-- Register handling script -->
     <script>
+        // Toggle debug panel with F2 key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F2') {
+                e.preventDefault();
+                document.getElementById('debugPanel').classList.toggle('show');
+            }
+        });
+
+        // Debug log function
+        function debugLog(message, data) {
+            const log = document.getElementById('debugLog');
+            const timestamp = new Date().toLocaleTimeString();
+            let logEntry = `[${timestamp}] ${message}`;
+            if (data) {
+                logEntry += `<br>Data: ${JSON.stringify(data, null, 2)}`;
+            }
+            log.innerHTML = logEntry + '<br>' + log.innerHTML;
+            console.log(message, data);
+        }
+
         // Password strength checker
         function checkPasswordStrength() {
             const password = document.getElementById('password').value;
@@ -378,6 +449,8 @@
                     const usernameRegex = /^[a-zA-Z0-9_-]{5,}$/;
                     if (!usernameRegex.test(value)) {
                         errorElement.classList.remove('hidden');
+                        document.getElementById('username-taken').classList.add('hidden');
+                        document.getElementById('username-available').classList.add('hidden');
                         return false;
                     } else {
                         errorElement.classList.add('hidden');
@@ -388,6 +461,8 @@
                     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                     if (!emailRegex.test(value)) {
                         errorElement.classList.remove('hidden');
+                        document.getElementById('email-taken').classList.add('hidden');
+                        document.getElementById('email-available').classList.add('hidden');
                         return false;
                     } else {
                         errorElement.classList.add('hidden');
@@ -439,6 +514,99 @@
                 eyeSpan.textContent = '👁️'; // open eye
             }
         }
+
+        // Check username availability
+        function checkUsernameAvailability() {
+            const username = document.getElementById('username').value.trim();
+            const usernameError = document.getElementById('username-error');
+            const usernameTaken = document.getElementById('username-taken');
+            const usernameAvailable = document.getElementById('username-available');
+            
+            // Clear previous messages
+            usernameTaken.classList.add('hidden');
+            usernameAvailable.classList.add('hidden');
+            
+            // Validate format first
+            const usernameRegex = /^[a-zA-Z0-9_-]{5,}$/;
+            if (!usernameRegex.test(username)) {
+                return;
+            }
+            
+            debugLog('Checking username availability:', username);
+            
+            // Make API call to check username
+            fetch('${pageContext.request.contextPath}/guests/api/username-exists?username=' + encodeURIComponent(username))
+                .then(response => response.json())
+                .then(data => {
+                    debugLog('Username check response:', data);
+                    if (data.exists) {
+                        usernameTaken.classList.remove('hidden');
+                        usernameAvailable.classList.add('hidden');
+                    } else {
+                        usernameAvailable.classList.remove('hidden');
+                        usernameTaken.classList.add('hidden');
+                    }
+                })
+                .catch(error => {
+                    debugLog('Error checking username:', error);
+                });
+        }
+
+        // Check email availability
+        function checkEmailAvailability() {
+            const email = document.getElementById('email').value.trim();
+            const emailError = document.getElementById('email-error');
+            const emailTaken = document.getElementById('email-taken');
+            const emailAvailable = document.getElementById('email-available');
+            
+            // Clear previous messages
+            emailTaken.classList.add('hidden');
+            emailAvailable.classList.add('hidden');
+            
+            // Validate format first
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                return;
+            }
+            
+            debugLog('Checking email availability:', email);
+            
+            // Make API call to check email
+            fetch('${pageContext.request.contextPath}/guests/api/email-exists?email=' + encodeURIComponent(email))
+                .then(response => response.json())
+                .then(data => {
+                    debugLog('Email check response:', data);
+                    if (data.exists) {
+                        emailTaken.classList.remove('hidden');
+                        emailAvailable.classList.add('hidden');
+                    } else {
+                        emailAvailable.classList.remove('hidden');
+                        emailTaken.classList.add('hidden');
+                    }
+                })
+                .catch(error => {
+                    debugLog('Error checking email:', error);
+                });
+        }
+
+        // Show loading state on button
+        function setLoading(isLoading) {
+            const btn = document.getElementById('registerBtn');
+            const btnIcon = document.getElementById('btn-icon');
+            const btnText = document.getElementById('btn-text');
+            
+            if (isLoading) {
+                btn.classList.add('btn-loading');
+                btnIcon.innerHTML = '<span class="loading-spinner"></span>';
+                btnText.textContent = 'Creating Account...';
+                btn.disabled = true;
+            } else {
+                btn.classList.remove('btn-loading');
+                btnIcon.innerHTML = '📝';
+                btnText.textContent = 'Create Account';
+                btn.disabled = false;
+            }
+        }
         
         function handleRegister(event) {
             event.preventDefault();
@@ -454,6 +622,11 @@
             const confirmPassword = document.getElementById('confirmPassword').value.trim();
             const terms = document.getElementById('terms').checked;
             
+            debugLog('Form values collected:', {
+                fullname, username, email, phone, gender, address, 
+                password: '***', confirmPassword: '***', terms
+            });
+            
             // Validate all fields
             let isValid = true;
             
@@ -461,6 +634,7 @@
             if (fullname.length < 4) {
                 document.getElementById('fullname-error').classList.remove('hidden');
                 isValid = false;
+                debugLog('Validation failed: fullname too short');
             } else {
                 document.getElementById('fullname-error').classList.add('hidden');
             }
@@ -470,8 +644,17 @@
             if (!usernameRegex.test(username)) {
                 document.getElementById('username-error').classList.remove('hidden');
                 isValid = false;
+                debugLog('Validation failed: invalid username format');
             } else {
                 document.getElementById('username-error').classList.add('hidden');
+            }
+            
+            // Check if username is taken
+            if (document.getElementById('username-taken') && 
+                !document.getElementById('username-taken').classList.contains('hidden')) {
+                showError('Username is already taken. Please choose another.');
+                isValid = false;
+                debugLog('Validation failed: username taken');
             }
             
             // Email validation
@@ -479,8 +662,17 @@
             if (!emailRegex.test(email)) {
                 document.getElementById('email-error').classList.remove('hidden');
                 isValid = false;
+                debugLog('Validation failed: invalid email format');
             } else {
                 document.getElementById('email-error').classList.add('hidden');
+            }
+            
+            // Check if email is taken
+            if (document.getElementById('email-taken') && 
+                !document.getElementById('email-taken').classList.contains('hidden')) {
+                showError('Email is already registered. Please use another or login.');
+                isValid = false;
+                debugLog('Validation failed: email taken');
             }
             
             // Phone validation
@@ -488,6 +680,7 @@
             if (!phoneRegex.test(phone)) {
                 document.getElementById('phone-error').classList.remove('hidden');
                 isValid = false;
+                debugLog('Validation failed: invalid phone format');
             } else {
                 document.getElementById('phone-error').classList.add('hidden');
             }
@@ -496,12 +689,14 @@
             if (!gender) {
                 showError('Please select your gender.');
                 isValid = false;
+                debugLog('Validation failed: gender not selected');
             }
             
             // Address validation
             if (address.length === 0) {
                 document.getElementById('address-error').classList.remove('hidden');
                 isValid = false;
+                debugLog('Validation failed: address empty');
             } else {
                 document.getElementById('address-error').classList.add('hidden');
             }
@@ -511,6 +706,7 @@
             if (!passwordRegex.test(password)) {
                 document.getElementById('password-error').classList.remove('hidden');
                 isValid = false;
+                debugLog('Validation failed: password not strong enough');
             } else {
                 document.getElementById('password-error').classList.add('hidden');
             }
@@ -519,6 +715,7 @@
             if (password !== confirmPassword) {
                 document.getElementById('confirmPassword-error').classList.remove('hidden');
                 isValid = false;
+                debugLog('Validation failed: passwords do not match');
             } else {
                 document.getElementById('confirmPassword-error').classList.add('hidden');
             }
@@ -527,34 +724,121 @@
             if (!terms) {
                 showError('You must agree to the Terms of Service and Privacy Policy.');
                 isValid = false;
+                debugLog('Validation failed: terms not accepted');
             }
             
             if (!isValid) {
+                debugLog('Validation failed, aborting registration');
                 return false;
             }
             
-            // Show loading message
-            showInfo('Creating your account...', 2000);
+            // Show loading state
+            setLoading(true);
+            showInfo('Creating your account...', 0);
             
-            // Simulate registration process
-            setTimeout(() => {
-                showSuccess('Registration successful! Welcome to Ocean View Resort, ' + fullname.split(' ')[0] + '!');
+            // Prepare data for API - make sure field names match backend expectations
+            const guestData = {
+                fullName: fullname,
+                username: username,
+                email: email,
+                phone: phone,
+                gender: gender,
+                address: address,
+                password: password,
+                status: 'active'
+            };
+            
+            debugLog('Sending registration data:', guestData);
+            
+            // Make API call to register
+            fetch('${pageContext.request.contextPath}/guests/api/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(guestData)
+            })
+            .then(async response => {
+                debugLog('Response status:', response.status);
                 
-                // Clear form
-                document.getElementById('registerForm').reset();
+                // Try to parse response as JSON
+                const text = await response.text();
+                debugLog('Raw response:', text);
                 
-                // Reset password strength meter
-                document.getElementById('strength-bar').style.width = '0%';
-                document.getElementById('strength-text').textContent = '';
+                let data;
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    debugLog('Failed to parse JSON:', text);
+                    throw new Error('Server returned invalid response');
+                }
                 
-                // Redirect to login after 2 seconds
-                setTimeout(() => {
-                    window.location.href = 'login.jsp';
-                }, 2000);
-            }, 1500);
+                if (!response.ok) {
+                    // If response is not OK, throw the error data
+                    throw data;
+                }
+                return data;
+            })
+            .then(data => {
+                setLoading(false);
+                debugLog('Registration success:', data);
+                
+                if (data.success) {
+                    showSuccess('Registration successful! Welcome to Ocean View Resort, ' + fullname.split(' ')[0] + '!');
+                    
+                    // Clear form
+                    document.getElementById('registerForm').reset();
+                    
+                    // Reset password strength meter
+                    document.getElementById('strength-bar').style.width = '0%';
+                    document.getElementById('strength-text').textContent = '';
+                    
+                    // Hide availability messages
+                    document.getElementById('username-available').classList.add('hidden');
+                    document.getElementById('email-available').classList.add('hidden');
+                    
+                    // Store registration info in session storage if needed
+                    sessionStorage.setItem('registrationSuccess', 'true');
+                    sessionStorage.setItem('registeredEmail', email);
+                    
+                    // Redirect to login after 2 seconds
+                    setTimeout(() => {
+                        window.location.href = 'login.jsp';
+                    }, 2000);
+                } else {
+                    showError(data.message || 'Registration failed. Please try again.');
+                }
+            })
+            .catch(error => {
+                setLoading(false);
+                debugLog('Registration error:', error);
+                
+                let errorMessage = 'An error occurred during registration.';
+                
+                if (error && error.message) {
+                    errorMessage = error.message;
+                } else if (error && typeof error === 'string') {
+                    errorMessage = error;
+                } else if (error && error.error) {
+                    errorMessage = error.error;
+                }
+                
+                showError(errorMessage);
+                console.error('Error during registration:', error);
+            });
             
             return false;
         }
+
+        // Check if there was a registration success from previous page
+        window.addEventListener('load', function() {
+            if (sessionStorage.getItem('registrationSuccess') === 'true') {
+                const email = sessionStorage.getItem('registeredEmail');
+                showSuccess('Registration successful! Please login with your credentials.');
+                sessionStorage.removeItem('registrationSuccess');
+                sessionStorage.removeItem('registeredEmail');
+            }
+        });
     </script>
 </body>
 </html>

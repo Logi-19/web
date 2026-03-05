@@ -153,6 +153,32 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        /* Loading spinner */
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0284a8;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
     </style>
 </head>
 <body class="bg-[#f0f7fa] text-[#1e3c5c] antialiased flex">
@@ -169,12 +195,21 @@
                 <span class="font-semibold">Guest Management</span>
             </div>
             <div class="flex items-center gap-3">
-                <span class="bg-[#0284a8] text-white text-xs px-3 py-1.5 rounded-full" x-text="`${filteredGuests.length} guests`"></span>
+                <span class="bg-[#0284a8] text-white text-xs px-3 py-1.5 rounded-full" x-text="`${guests ? guests.length : 0} guests`"></span>
+                <button @click="refreshData()" class="bg-white p-2 rounded-full border border-[#b5e5e0] hover:bg-[#b5e5e0]/20 transition" title="Refresh">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-[#0284a8]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                </button>
             </div>
         </header>
 
         <!-- dashboard content -->
-        <div class="p-4 md:p-6 lg:p-8 space-y-6 max-w-full">
+        <div class="p-4 md:p-6 lg:p-8 space-y-6 max-w-full relative">
+            <!-- Loading overlay -->
+            <div x-show="loading" class="loading-overlay">
+                <div class="loading-spinner"></div>
+            </div>
 
             <!-- Header with title -->
             <div class="flex justify-between items-center">
@@ -191,7 +226,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-[#3a5a78] text-sm font-medium">Total Guests</p>
-                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="guests.length"></p>
+                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="stats.total || 0"></p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-[#b5e5e0]/30 flex items-center justify-center">
                             <span class="text-2xl">👤</span>
@@ -204,7 +239,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-[#3a5a78] text-sm font-medium">Active</p>
-                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="getActiveCount()"></p>
+                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="stats.active || 0"></p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-[#b5e5e0] flex items-center justify-center">
                             <span class="text-2xl">✅</span>
@@ -217,7 +252,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-[#3a5a78] text-sm font-medium">Inactive</p>
-                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="getInactiveCount()"></p>
+                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="stats.inactive || 0"></p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-[#f8e4c3] flex items-center justify-center">
                             <span class="text-2xl">⏸️</span>
@@ -230,7 +265,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-[#3a5a78] text-sm font-medium">New This Month</p>
-                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="getNewThisMonthCount()"></p>
+                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="stats.createdThisMonth || 0"></p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-[#9ac9c2] flex items-center justify-center">
                             <span class="text-2xl">🆕</span>
@@ -245,6 +280,7 @@
                 <div class="relative">
                     <input type="text" 
                            x-model="searchQuery"
+                           @input.debounce.500ms="searchGuests()"
                            placeholder="Search by Reg No, Full Name, Username or Email..." 
                            class="w-full pl-10 pr-4 py-3 rounded-xl border border-[#b5e5e0] focus:outline-none focus:ring-2 focus:ring-[#0284a8] focus:border-transparent text-sm">
                     <span class="absolute left-3 top-3.5 text-[#3a5a78] text-lg">🔍</span>
@@ -255,7 +291,7 @@
                     <!-- Status Filter (Active/Inactive) -->
                     <div>
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Status</label>
-                        <select x-model="statusFilter" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
+                        <select x-model="statusFilter" @change="filterGuests()" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                             <option value="all">All Status</option>
                             <option value="active">Active</option>
                             <option value="inactive">Inactive</option>
@@ -265,7 +301,7 @@
                     <!-- Joined Month Filter -->
                     <div>
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Joined Month</label>
-                        <select x-model="joinedMonthFilter" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
+                        <select x-model="joinedMonthFilter" @change="filterGuests()" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                             <option value="all">All Months</option>
                             <option value="01">January</option>
                             <option value="02">February</option>
@@ -285,7 +321,7 @@
                     <!-- Joined Year Filter -->
                     <div>
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Joined Year</label>
-                        <select x-model="joinedYearFilter" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
+                        <select x-model="joinedYearFilter" @change="filterGuests()" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                             <option value="all">All Years</option>
                             <option value="2025">2025</option>
                             <option value="2024">2024</option>
@@ -299,6 +335,7 @@
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Specific Joined Date</label>
                         <input type="date" 
                                x-model="joinedDateFilter"
+                               @change="filterGuests()"
                                class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                     </div>
                 </div>
@@ -307,9 +344,6 @@
                 <div class="flex flex-wrap justify-end gap-2 pt-2">
                     <button @click="clearFilters()" class="px-4 py-2 rounded-lg border border-[#b5e5e0] text-[#1e3c5c] hover:bg-[#b5e5e0]/20 transition text-sm font-medium">
                         Clear Filters
-                    </button>
-                    <button @click="applyFilters()" class="px-4 py-2 rounded-lg bg-[#0284a8] text-white hover:bg-[#03738C] transition text-sm font-medium">
-                        Apply Filters
                     </button>
                 </div>
             </div>
@@ -332,32 +366,39 @@
                             </tr>
                         </thead>
                         <tbody>
+                            <template x-if="!guests || guests.length === 0">
+                                <tr>
+                                    <td colspan="9" class="text-center py-8 text-[#3a5a78]">
+                                        No guests found
+                                    </td>
+                                </tr>
+                            </template>
                             <template x-for="guest in paginatedGuests" :key="guest.id">
                                 <tr>
                                     <!-- Reg No -->
                                     <td>
-                                        <div class="font-medium text-[#1e3c5c] text-sm" x-text="guest.regNo"></div>
+                                        <div class="font-medium text-[#1e3c5c] text-sm" x-text="guest.regNo || 'N/A'"></div>
                                     </td>
                                     
                                     <!-- Full Name -->
                                     <td>
-                                        <div class="text-sm text-[#1e3c5c] font-medium compact-cell" x-text="guest.fullName"></div>
+                                        <div class="text-sm text-[#1e3c5c] font-medium compact-cell" x-text="guest.fullName || 'N/A'"></div>
                                     </td>
                                     
                                     <!-- Username -->
                                     <td>
-                                        <div class="text-sm text-[#1e3c5c] compact-cell" x-text="guest.username"></div>
+                                        <div class="text-sm text-[#1e3c5c] compact-cell" x-text="guest.username || 'N/A'"></div>
                                     </td>
                                     
                                     <!-- Email / Phone (combined) -->
                                     <td>
-                                        <div class="text-sm text-[#1e3c5c] compact-cell" x-text="guest.email"></div>
-                                        <div class="text-xs text-[#3a5a78]" x-text="guest.phone"></div>
+                                        <div class="text-sm text-[#1e3c5c] compact-cell" x-text="guest.email || 'N/A'"></div>
+                                        <div class="text-xs text-[#3a5a78]" x-text="guest.phone || 'N/A'"></div>
                                     </td>
                                     
                                     <!-- Address -->
                                     <td>
-                                        <div class="text-sm text-[#1e3c5c] compact-cell" x-text="guest.address"></div>
+                                        <div class="text-sm text-[#1e3c5c] compact-cell" x-text="guest.address || 'N/A'"></div>
                                     </td>
                                     
                                     <!-- Status -->
@@ -422,7 +463,7 @@
             </div>
 
             <!-- No Results Message -->
-            <div x-show="filteredGuests.length === 0" class="text-center py-12">
+            <div x-show="filteredGuests && filteredGuests.length === 0 && !loading && guests && guests.length > 0" class="text-center py-12">
                 <span class="text-5xl mb-3 block">👤</span>
                 <p class="text-lg text-[#3a5a78]">No guests found matching your filters</p>
                 <button @click="clearFilters()" class="mt-4 px-6 py-2 rounded-lg bg-[#0284a8] text-white hover:bg-[#03738C] transition text-sm font-medium">
@@ -431,7 +472,7 @@
             </div>
 
             <!-- Pagination with Items Per Page Selector -->
-            <div x-show="filteredGuests.length > 0" class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+            <div x-show="filteredGuests && filteredGuests.length > 0" class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
                 <div class="flex items-center gap-2">
                     <span class="text-sm text-[#3a5a78]">Show:</span>
                     <select x-model="itemsPerPage" @change="currentPage = 1" 
@@ -462,9 +503,9 @@
                 </div>
                 
                 <div class="text-sm text-[#3a5a78]">
-                    Showing <span x-text="((currentPage - 1) * itemsPerPage) + 1"></span> - 
-                    <span x-text="Math.min(currentPage * itemsPerPage, filteredGuests.length)"></span> 
-                    of <span x-text="filteredGuests.length"></span>
+                    Showing <span x-text="filteredGuests ? ((currentPage - 1) * itemsPerPage) + 1 : 0"></span> - 
+                    <span x-text="filteredGuests ? Math.min(currentPage * itemsPerPage, filteredGuests.length) : 0"></span> 
+                    of <span x-text="filteredGuests ? filteredGuests.length : 0"></span>
                 </div>
             </div>
         </div>
@@ -531,7 +572,7 @@
             </div>
         </div>
 
-        <!-- View Guest Modal (Full Details) -->
+        <!-- View Guest Modal (Full Details) - GENDER ADDED HERE -->
         <div x-show="showViewModal" 
              class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-overlay"
              x-transition:enter="transition ease-out duration-300"
@@ -559,31 +600,37 @@
                         <!-- Reg No -->
                         <div>
                             <p class="text-sm text-[#3a5a78]">Registration No</p>
-                            <p class="font-medium text-[#1e3c5c]" x-text="selectedGuest?.regNo"></p>
+                            <p class="font-medium text-[#1e3c5c]" x-text="selectedGuest?.regNo || 'N/A'"></p>
                         </div>
                         
                         <!-- Full Name -->
                         <div>
                             <p class="text-sm text-[#3a5a78]">Full Name</p>
-                            <p class="font-medium text-[#1e3c5c]" x-text="selectedGuest?.fullName"></p>
+                            <p class="font-medium text-[#1e3c5c]" x-text="selectedGuest?.fullName || 'N/A'"></p>
                         </div>
                         
                         <!-- Username -->
                         <div>
                             <p class="text-sm text-[#3a5a78]">Username</p>
-                            <p class="font-medium text-[#1e3c5c]" x-text="selectedGuest?.username"></p>
+                            <p class="font-medium text-[#1e3c5c]" x-text="selectedGuest?.username || 'N/A'"></p>
                         </div>
                         
                         <!-- Email -->
                         <div>
                             <p class="text-sm text-[#3a5a78]">Email</p>
-                            <p class="font-medium text-[#1e3c5c]" x-text="selectedGuest?.email"></p>
+                            <p class="font-medium text-[#1e3c5c]" x-text="selectedGuest?.email || 'N/A'"></p>
                         </div>
                         
                         <!-- Phone -->
                         <div>
                             <p class="text-sm text-[#3a5a78]">Phone</p>
-                            <p class="font-medium text-[#1e3c5c]" x-text="selectedGuest?.phone"></p>
+                            <p class="font-medium text-[#1e3c5c]" x-text="selectedGuest?.phone || 'N/A'"></p>
+                        </div>
+                        
+                        <!-- GENDER ADDED HERE -->
+                        <div>
+                            <p class="text-sm text-[#3a5a78]">Gender</p>
+                            <p class="font-medium text-[#1e3c5c] capitalize" x-text="selectedGuest?.gender || 'N/A'"></p>
                         </div>
                         
                         <!-- Password (masked) -->
@@ -595,7 +642,7 @@
                         <!-- Address (full width) -->
                         <div class="col-span-2">
                             <p class="text-sm text-[#3a5a78]">Address</p>
-                            <p class="font-medium text-[#1e3c5c]" x-text="selectedGuest?.address"></p>
+                            <p class="font-medium text-[#1e3c5c]" x-text="selectedGuest?.address || 'N/A'"></p>
                         </div>
                         
                         <!-- Status -->
@@ -685,121 +732,11 @@
     <script>
         function guestManager() {
             return {
-                // Sample guest data
-                guests: [
-                    { 
-                        id: 1, 
-                        regNo: 'GST-00001',
-                        fullName: 'Robert Johnson',
-                        username: 'robertj',
-                        email: 'robert.johnson@email.com',
-                        phone: '+94 77 123 4567',
-                        address: '123 Park Avenue, Colombo 05, Sri Lanka',
-                        password: 'password123',
-                        status: 'active',
-                        lastLogin: '2025-06-15 09:30',
-                        createdDate: '2024-01-15',
-                        updatedDate: '2025-05-20'
-                    },
-                    { 
-                        id: 2, 
-                        regNo: 'GST-00002',
-                        fullName: 'Maria Garcia',
-                        username: 'mariag',
-                        email: 'maria.garcia@email.com',
-                        phone: '+94 77 234 5678',
-                        address: '45 Beach Road, Mount Lavinia, Sri Lanka',
-                        password: 'password123',
-                        status: 'active',
-                        lastLogin: '2025-06-14 14:15',
-                        createdDate: '2024-03-20',
-                        updatedDate: '2025-05-18'
-                    },
-                    { 
-                        id: 3, 
-                        regNo: 'GST-00003',
-                        fullName: 'David Chen',
-                        username: 'davidc',
-                        email: 'david.chen@email.com',
-                        phone: '+94 77 345 6789',
-                        address: '78 Temple Road, Kandy, Sri Lanka',
-                        password: 'password123',
-                        status: 'active',
-                        lastLogin: '2025-06-13 10:45',
-                        createdDate: '2024-06-10',
-                        updatedDate: '2025-05-15'
-                    },
-                    { 
-                        id: 4, 
-                        regNo: 'GST-00004',
-                        fullName: 'Sarah Ahmed',
-                        username: 'sarah',
-                        email: 'sarah.ahmed@email.com',
-                        phone: '+94 77 456 7890',
-                        address: '23 Lake Drive, Nugegoda, Sri Lanka',
-                        password: 'password123',
-                        status: 'active',
-                        lastLogin: '2025-06-15 08:30',
-                        createdDate: '2024-09-05',
-                        updatedDate: '2025-05-10'
-                    },
-                    { 
-                        id: 5, 
-                        regNo: 'GST-00005',
-                        fullName: 'James Wilson',
-                        username: 'jamesw',
-                        email: 'james.wilson@email.com',
-                        phone: '+94 77 567 8901',
-                        address: '67 Hill Street, Galle, Sri Lanka',
-                        password: 'password123',
-                        status: 'inactive',
-                        lastLogin: '2025-06-01 16:20',
-                        createdDate: '2024-11-12',
-                        updatedDate: '2025-06-01'
-                    },
-                    { 
-                        id: 6, 
-                        regNo: 'GST-00006',
-                        fullName: 'Lisa Wong',
-                        username: 'lisaw',
-                        email: 'lisa.wong@email.com',
-                        phone: '+94 77 678 9012',
-                        address: '89 Ocean Drive, Bentota, Sri Lanka',
-                        password: 'password123',
-                        status: 'active',
-                        lastLogin: '2025-06-14 11:30',
-                        createdDate: '2025-02-18',
-                        updatedDate: '2025-05-25'
-                    },
-                    { 
-                        id: 7, 
-                        regNo: 'GST-00007',
-                        fullName: 'Michael Brown',
-                        username: 'michaelb',
-                        email: 'michael.brown@email.com',
-                        phone: '+94 77 789 0123',
-                        address: '34 Queen Street, Negombo, Sri Lanka',
-                        password: 'password123',
-                        status: 'active',
-                        lastLogin: '2025-06-12 09:45',
-                        createdDate: '2025-01-20',
-                        updatedDate: '2025-05-28'
-                    },
-                    { 
-                        id: 8, 
-                        regNo: 'GST-00008',
-                        fullName: 'Emily Taylor',
-                        username: 'emilyt',
-                        email: 'emily.taylor@email.com',
-                        phone: '+94 77 890 1234',
-                        address: '56 Beach Road, Trincomalee, Sri Lanka',
-                        password: 'password123',
-                        status: 'inactive',
-                        lastLogin: '2025-05-28 15:20',
-                        createdDate: '2024-08-14',
-                        updatedDate: '2025-05-28'
-                    }
-                ],
+                // Data properties
+                guests: [],
+                filteredGuests: [],
+                stats: {},
+                loading: false,
                 
                 searchQuery: '',
                 statusFilter: 'all',
@@ -818,121 +755,212 @@
                 selectedGuest: null,
                 statusTarget: null,
                 
-                // Get status counts
-                getStatusCounts: function() {
-                    var counts = {
-                        active: 0,
-                        inactive: 0
-                    };
-                    
-                    this.guests.forEach(function(guest) {
-                        if (guest.status === 'active') {
-                            counts.active++;
-                        } else {
-                            counts.inactive++;
-                        }
-                    });
-                    
-                    return [
-                        { name: 'Active', count: counts.active, value: 'active' },
-                        { name: 'Inactive', count: counts.inactive, value: 'inactive' }
-                    ];
+                // Computed property for total pages
+                get totalPages() {
+                    return this.filteredGuests && Array.isArray(this.filteredGuests) 
+                        ? Math.ceil(this.filteredGuests.length / this.itemsPerPage) 
+                        : 0;
                 },
                 
-                get filteredGuests() {
-                    return this.guests.filter(guest => {
-                        // Search filter - only regno, fullName, username, email
-                        if (this.searchQuery) {
-                            var query = this.searchQuery.toLowerCase();
-                            var matchesSearch = guest.regNo.toLowerCase().includes(query) ||
-                                                guest.fullName.toLowerCase().includes(query) ||
-                                                guest.username.toLowerCase().includes(query) ||
-                                                guest.email.toLowerCase().includes(query);
-                            if (!matchesSearch) return false;
-                        }
-                        
-                        // Status filter
-                        if (this.statusFilter !== 'all' && guest.status !== this.statusFilter) {
-                            return false;
-                        }
-                        
-                        // Joined date filters
-                        var createdDate = new Date(guest.createdDate);
-                        
-                        // Month filter
-                        if (this.joinedMonthFilter !== 'all') {
-                            var month = (createdDate.getMonth() + 1).toString();
-                            if (month.length === 1) month = '0' + month;
-                            if (month !== this.joinedMonthFilter) return false;
-                        }
-                        
-                        // Year filter
-                        if (this.joinedYearFilter !== 'all') {
-                            var year = createdDate.getFullYear().toString();
-                            if (year !== this.joinedYearFilter) return false;
-                        }
-                        
-                        // Specific date filter
-                        if (this.joinedDateFilter && guest.createdDate !== this.joinedDateFilter) {
-                            return false;
-                        }
-                        
-                        return true;
-                    });
-                },
-                
+                // Computed property for paginated guests
                 get paginatedGuests() {
+                    if (!this.filteredGuests || !Array.isArray(this.filteredGuests)) {
+                        return [];
+                    }
                     var start = (this.currentPage - 1) * this.itemsPerPage;
                     var end = start + this.itemsPerPage;
                     return this.filteredGuests.slice(start, end);
                 },
                 
-                get totalPages() {
-                    return Math.ceil(this.filteredGuests.length / this.itemsPerPage);
+                // Initialize
+                init: function() {
+                    this.loadData();
+                    this.loadStats();
+                    
+                    // Watch for filter changes
+                    var self = this;
+                    this.$watch('searchQuery', function(value) {
+                        self.filterGuests();
+                    });
+                    this.$watch('statusFilter', function(value) {
+                        self.filterGuests();
+                    });
+                    this.$watch('joinedMonthFilter', function(value) {
+                        self.filterGuests();
+                    });
+                    this.$watch('joinedYearFilter', function(value) {
+                        self.filterGuests();
+                    });
+                    this.$watch('joinedDateFilter', function(value) {
+                        self.filterGuests();
+                    });
                 },
                 
-                // Count methods
+                // Load all guests data
+                loadData: function() {
+                    this.loading = true;
+                    var self = this;
+                    
+                    fetch('${pageContext.request.contextPath}/guests/api/list')
+                        .then(response => response.json())
+                        .then(data => {
+                            self.guests = Array.isArray(data) ? data : [];
+                            self.filteredGuests = Array.isArray(data) ? data : [];
+                            self.loading = false;
+                        })
+                        .catch(error => {
+                            console.error('Error loading guests:', error);
+                            if (window.showError) {
+                                window.showError('Failed to load guests', 3000);
+                            }
+                            self.guests = [];
+                            self.filteredGuests = [];
+                            self.loading = false;
+                        });
+                },
+                
+                // Load statistics
+                loadStats: function() {
+                    var self = this;
+                    
+                    fetch('${pageContext.request.contextPath}/guests/api/stats')
+                        .then(response => response.json())
+                        .then(data => {
+                            self.stats = data || {};
+                        })
+                        .catch(error => {
+                            console.error('Error loading stats:', error);
+                            self.stats = {};
+                        });
+                },
+                
+                // Refresh all data
+                refreshData: function() {
+                    this.loadData();
+                    this.loadStats();
+                    if (window.showSuccess) {
+                        window.showSuccess('Data refreshed', 2000);
+                    }
+                },
+                
+                // Filter guests based on search and filters
+                filterGuests: function() {
+                    var self = this;
+                    
+                    if (!this.guests || !Array.isArray(this.guests)) {
+                        this.filteredGuests = [];
+                        return;
+                    }
+                    
+                    if (this.searchQuery) {
+                        // If search query exists, use search API
+                        fetch('${pageContext.request.contextPath}/guests/api/search?q=' + encodeURIComponent(this.searchQuery))
+                            .then(response => response.json())
+                            .then(data => {
+                                self.applyLocalFilters(Array.isArray(data) ? data : []);
+                            })
+                            .catch(error => {
+                                console.error('Error searching guests:', error);
+                                self.applyLocalFilters([]);
+                            });
+                    } else {
+                        // Otherwise use local filtering
+                        this.applyLocalFilters(this.guests);
+                    }
+                },
+                
+                // Apply local filters to data
+                applyLocalFilters: function(data) {
+                    var self = this;
+                    
+                    this.filteredGuests = (data || []).filter(function(guest) {
+                        // Status filter
+                        if (self.statusFilter !== 'all' && guest.status !== self.statusFilter) {
+                            return false;
+                        }
+                        
+                        // Joined date filters
+                        if (guest.createdDate) {
+                            var createdDate = new Date(guest.createdDate);
+                            
+                            // Month filter
+                            if (self.joinedMonthFilter !== 'all') {
+                                var month = (createdDate.getMonth() + 1).toString();
+                                if (month.length === 1) month = '0' + month;
+                                if (month !== self.joinedMonthFilter) return false;
+                            }
+                            
+                            // Year filter
+                            if (self.joinedYearFilter !== 'all') {
+                                var year = createdDate.getFullYear().toString();
+                                if (year !== self.joinedYearFilter) return false;
+                            }
+                            
+                            // Specific date filter
+                            if (self.joinedDateFilter) {
+                                var guestDate = guest.createdDate.split('T')[0];
+                                if (guestDate !== self.joinedDateFilter) return false;
+                            }
+                        }
+                        
+                        return true;
+                    });
+                    
+                    this.currentPage = 1;
+                },
+                
+                // Search guests
+                searchGuests: function() {
+                    this.filterGuests();
+                },
+                
+                // Clear all filters
+                clearFilters: function() {
+                    this.searchQuery = '';
+                    this.statusFilter = 'all';
+                    this.joinedMonthFilter = 'all';
+                    this.joinedYearFilter = 'all';
+                    this.joinedDateFilter = '';
+                    this.filteredGuests = this.guests ? [...this.guests] : [];
+                    this.currentPage = 1;
+                    
+                    if (window.showInfo) {
+                        window.showInfo('Filters cleared', 2000);
+                    }
+                },
+                
+                // Count methods (for backward compatibility)
                 getActiveCount: function() {
-                    return this.guests.filter(function(g) { return g.status === 'active'; }).length;
+                    return this.stats.active || 0;
                 },
                 
                 getInactiveCount: function() {
-                    return this.guests.filter(function(g) { return g.status === 'inactive'; }).length;
+                    return this.stats.inactive || 0;
                 },
                 
                 getNewThisMonthCount: function() {
-                    var currentDate = new Date();
-                    var currentMonth = currentDate.getMonth();
-                    var currentYear = currentDate.getFullYear();
-                    
-                    return this.guests.filter(function(guest) {
-                        var createdDate = new Date(guest.createdDate);
-                        return createdDate.getMonth() === currentMonth && 
-                               createdDate.getFullYear() === currentYear;
-                    }).length;
+                    return this.stats.createdThisMonth || 0;
                 },
                 
-                init: function() {
-                    var self = this;
-                    
-                    // Reset to first page when filters change
-                    this.$watch('filteredGuests', function() {
-                        self.currentPage = 1;
-                    });
-                    
-                    console.log('Guest Manager initialized');
-                },
-                
+                // Format date
                 formatDate: function(dateString) {
                     if (!dateString) return '';
-                    var options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
-                    return new Date(dateString).toLocaleDateString('en-US', options);
+                    try {
+                        var options = { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' };
+                        return new Date(dateString).toLocaleDateString('en-US', options);
+                    } catch (e) {
+                        return dateString;
+                    }
                 },
                 
                 formatShortDate: function(dateString) {
                     if (!dateString) return '';
-                    var options = { year: 'numeric', month: 'short', day: 'numeric' };
-                    return new Date(dateString).toLocaleDateString('en-US', options);
+                    try {
+                        var options = { year: 'numeric', month: 'short', day: 'numeric' };
+                        return new Date(dateString).toLocaleDateString('en-US', options);
+                    } catch (e) {
+                        return dateString;
+                    }
                 },
                 
                 // Confirm status change
@@ -947,21 +975,55 @@
                     var self = this;
                     
                     if (this.selectedGuest.status === newStatus) {
-                        // No change
                         this.showStatusModal = false;
                         this.selectedGuest = null;
                         return;
                     }
                     
-                    var index = this.guests.findIndex(function(g) { return g.id === self.selectedGuest.id; });
-                    if (index !== -1) {
-                        this.guests[index].status = newStatus;
-                        this.guests[index].updatedDate = new Date().toISOString().split('T')[0];
-                        
-                        if (window.showSuccess) {
-                            window.showSuccess('Guest status updated successfully', 3000);
+                    this.loading = true;
+                    
+                    fetch('${pageContext.request.contextPath}/guests/api/' + this.selectedGuest.id + '/status', {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ status: newStatus })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Update local data
+                            var index = self.guests.findIndex(function(g) { 
+                                return g.id === self.selectedGuest.id; 
+                            });
+                            if (index !== -1) {
+                                self.guests[index].status = newStatus;
+                                self.guests[index].updatedDate = new Date().toISOString();
+                            }
+                            
+                            // Update filtered guests
+                            self.filterGuests();
+                            
+                            // Reload stats
+                            self.loadStats();
+                            
+                            if (window.showSuccess) {
+                                window.showSuccess('Guest status updated successfully', 3000);
+                            }
+                        } else {
+                            if (window.showError) {
+                                window.showError(data.message || 'Failed to update status', 3000);
+                            }
                         }
-                    }
+                        self.loading = false;
+                    })
+                    .catch(error => {
+                        console.error('Error updating status:', error);
+                        if (window.showError) {
+                            window.showError('Error updating status', 3000);
+                        }
+                        self.loading = false;
+                    });
                     
                     this.showStatusModal = false;
                     this.selectedGuest = null;
@@ -983,14 +1045,46 @@
                 // Delete guest
                 deleteGuest: function() {
                     var self = this;
-                    var index = this.guests.findIndex(function(g) { return g.id === self.selectedGuest.id; });
-                    if (index !== -1) {
-                        this.guests.splice(index, 1);
-                        
-                        if (window.showSuccess) {
-                            window.showSuccess('Guest deleted successfully', 3000);
+                    
+                    this.loading = true;
+                    
+                    fetch('${pageContext.request.contextPath}/guests/api/' + this.selectedGuest.id, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // Remove from local data
+                            var index = self.guests.findIndex(function(g) { 
+                                return g.id === self.selectedGuest.id; 
+                            });
+                            if (index !== -1) {
+                                self.guests.splice(index, 1);
+                            }
+                            
+                            // Update filtered guests
+                            self.filterGuests();
+                            
+                            // Reload stats
+                            self.loadStats();
+                            
+                            if (window.showSuccess) {
+                                window.showSuccess('Guest deleted successfully', 3000);
+                            }
+                        } else {
+                            if (window.showError) {
+                                window.showError(data.message || 'Failed to delete guest', 3000);
+                            }
                         }
-                    }
+                        self.loading = false;
+                    })
+                    .catch(error => {
+                        console.error('Error deleting guest:', error);
+                        if (window.showError) {
+                            window.showError('Error deleting guest', 3000);
+                        }
+                        self.loading = false;
+                    });
                     
                     this.showDeleteModal = false;
                     this.selectedGuest = null;
@@ -1001,27 +1095,7 @@
                     }
                 },
                 
-                clearFilters: function() {
-                    this.searchQuery = '';
-                    this.statusFilter = 'all';
-                    this.joinedMonthFilter = 'all';
-                    this.joinedYearFilter = 'all';
-                    this.joinedDateFilter = '';
-                    this.currentPage = 1;
-                    
-                    if (window.showInfo) {
-                        window.showInfo('Filters cleared', 3000);
-                    }
-                },
-                
-                applyFilters: function() {
-                    this.currentPage = 1;
-                    
-                    if (window.showSuccess) {
-                        window.showSuccess('Filters applied', 3000);
-                    }
-                },
-                
+                // Pagination methods
                 prevPage: function() {
                     if (this.currentPage > 1) {
                         this.currentPage--;
