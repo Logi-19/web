@@ -2,13 +2,6 @@
 <project-private xmlns="http://www.netbeans.org/ns/project-private/1">
     <editor-bookmarks xmlns="http://www.netbeans.org/ns/editor-bookmarks/2" lastBookmarkId="0"/>
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
-        <group>
-            <file>file:/home/kiru/NetBeansProjects/wepapp/src/java/wepapp/config/database.java</file>
-            <file>file:/home/kiru/NetBeansProjects/wepapp/web/admin/gallerycategory.jsp</file>
-            <file>file:/home/kiru/NetBeansProjects/wepapp/src/java/wepapp/model/GalleryCategory.java</file>
-            <file>file:/home/kiru/NetBeansProjects/wepapp/src/java/wepapp/dao/GalleryCategoryDAO.java</file>
-            <file>file:/home/kiru/NetBeansProjects/wepapp/src/java/wepapp/service/GalleryCategoryService.java</file>
-            <file>file:/home/kiru/NetBeansProjects/wepapp/src/java/wepapp/controller/GalleryCategoryController.java</file>
-        </group>
+        <group/>
     </open-files>
 </project-private>

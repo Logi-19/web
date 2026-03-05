@@ -405,7 +405,7 @@
                     <div class="flex items-center justify-between cursor-pointer" @click="showCategories = !showCategories">
                         <div>
                             <p class="text-[#3a5a78] text-sm font-medium">Categories</p>
-                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="getCategoriesCount()"></p>
+                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="categories.length"></p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-[#9ac9c2] flex items-center justify-center">
                             <span class="text-2xl">📋</span>
@@ -417,10 +417,10 @@
                          @click.away="showCategories = false"
                          class="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-[#b5e5e0] z-20 category-dropdown">
                         <div class="p-2">
-                            <template x-for="category in getCategoryCounts()" :key="category.name">
+                            <template x-for="category in categories" :key="category.id">
                                 <div class="category-option">
                                     <span class="text-sm text-[#1e3c5c]" x-text="category.name"></span>
-                                    <span class="category-count" x-text="category.count"></span>
+                                    <span class="category-count" x-text="category.count || 0"></span>
                                 </div>
                             </template>
                         </div>
@@ -434,6 +434,7 @@
                 <div class="relative">
                     <input type="text" 
                            x-model="searchQuery"
+                           @input.debounce="performSearch"
                            placeholder="Search by service title or description..." 
                            class="w-full pl-10 pr-4 py-3 rounded-xl border border-[#b5e5e0] focus:outline-none focus:ring-2 focus:ring-[#0284a8] focus:border-transparent text-sm">
                     <span class="absolute left-3 top-3.5 text-[#3a5a78] text-lg">🔍</span>
@@ -444,7 +445,7 @@
                     <!-- Status Filter -->
                     <div>
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Status</label>
-                        <select x-model="statusFilter" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
+                        <select x-model="statusFilter" @change="applyFilters" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                             <option value="all">All Status</option>
                             <option value="available">Available</option>
                             <option value="unavailable">Unavailable</option>
@@ -454,10 +455,10 @@
                     <!-- Category Filter -->
                     <div>
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Category</label>
-                        <select x-model="categoryFilter" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
+                        <select x-model="categoryFilter" @change="applyFilters" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                             <option value="all">All Categories</option>
-                            <template x-for="category in getCategoryCounts()" :key="category.name">
-                                <option :value="category.name" x-text="category.name"></option>
+                            <template x-for="category in categories" :key="category.id">
+                                <option :value="category.id" x-text="category.name"></option>
                             </template>
                         </select>
                     </div>
@@ -465,7 +466,7 @@
                     <!-- Duration Filter -->
                     <div>
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Duration</label>
-                        <select x-model="durationFilter" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
+                        <select x-model="durationFilter" @change="applyFilters" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                             <option value="all">Any Duration</option>
                             <option value="0">Unlimited</option>
                             <option value="30">30 min</option>
@@ -481,12 +482,14 @@
                         <div class="flex items-center gap-2">
                             <input type="number" 
                                    x-model="priceMin"
+                                   @change="applyFilters"
                                    placeholder="Min"
                                    min="0"
                                    class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                             <span class="text-[#3a5a78]">-</span>
                             <input type="number" 
                                    x-model="priceMax"
+                                   @change="applyFilters"
                                    placeholder="Max"
                                    min="0"
                                    class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
@@ -498,9 +501,6 @@
                 <div class="flex flex-wrap justify-end gap-2 pt-2">
                     <button @click="clearFilters()" class="px-4 py-2 rounded-lg border border-[#b5e5e0] text-[#1e3c5c] hover:bg-[#b5e5e0]/20 transition text-sm font-medium">
                         Clear Filters
-                    </button>
-                    <button @click="applyFilters()" class="px-4 py-2 rounded-lg bg-[#0284a8] text-white hover:bg-[#03738C] transition text-sm font-medium">
-                        Apply Filters
                     </button>
                 </div>
             </div>
@@ -539,14 +539,14 @@
                                     <td>
                                         <span class="category-badge text-xs"
                                               :class="{
-                                                  'bg-purple-100 text-purple-700': service.category === 'Spa & Wellness',
-                                                  'bg-blue-100 text-blue-700': service.category === 'Massage Therapy',
-                                                  'bg-green-100 text-green-700': service.category === 'Ayurveda',
-                                                  'bg-pink-100 text-pink-700': service.category === 'Beauty Treatments',
-                                                  'bg-orange-100 text-orange-700': service.category === 'Yoga & Meditation',
-                                                  'bg-yellow-100 text-yellow-700': service.category === 'Fitness'
+                                                  'bg-purple-100 text-purple-700': service.categoryName === 'Spa & Wellness',
+                                                  'bg-blue-100 text-blue-700': service.categoryName === 'Massage Therapy',
+                                                  'bg-green-100 text-green-700': service.categoryName === 'Ayurveda',
+                                                  'bg-pink-100 text-pink-700': service.categoryName === 'Beauty Treatments',
+                                                  'bg-orange-100 text-orange-700': service.categoryName === 'Yoga & Meditation',
+                                                  'bg-yellow-100 text-yellow-700': service.categoryName === 'Fitness'
                                               }">
-                                            <span x-text="service.category"></span>
+                                            <span x-text="service.categoryName"></span>
                                         </span>
                                     </td>
                                     
@@ -745,16 +745,13 @@
                     <!-- Category -->
                     <div>
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Category *</label>
-                        <select x-model="formData.category"
+                        <select x-model="formData.categoryId"
                                 required
                                 class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                             <option value="">Select Category</option>
-                            <option value="Spa & Wellness">Spa & Wellness</option>
-                            <option value="Massage Therapy">Massage Therapy</option>
-                            <option value="Ayurveda">Ayurveda</option>
-                            <option value="Beauty Treatments">Beauty Treatments</option>
-                            <option value="Yoga & Meditation">Yoga & Meditation</option>
-                            <option value="Fitness">Fitness</option>
+                            <template x-for="category in categories" :key="category.id">
+                                <option :value="category.id" x-text="category.name"></option>
+                            </template>
                         </select>
                     </div>
 
@@ -915,14 +912,14 @@
                             <p class="font-medium">
                                 <span class="category-badge"
                                       :class="{
-                                          'bg-purple-100 text-purple-700': selectedService?.category === 'Spa & Wellness',
-                                          'bg-blue-100 text-blue-700': selectedService?.category === 'Massage Therapy',
-                                          'bg-green-100 text-green-700': selectedService?.category === 'Ayurveda',
-                                          'bg-pink-100 text-pink-700': selectedService?.category === 'Beauty Treatments',
-                                          'bg-orange-100 text-orange-700': selectedService?.category === 'Yoga & Meditation',
-                                          'bg-yellow-100 text-yellow-700': selectedService?.category === 'Fitness'
+                                          'bg-purple-100 text-purple-700': selectedService?.categoryName === 'Spa & Wellness',
+                                          'bg-blue-100 text-blue-700': selectedService?.categoryName === 'Massage Therapy',
+                                          'bg-green-100 text-green-700': selectedService?.categoryName === 'Ayurveda',
+                                          'bg-pink-100 text-pink-700': selectedService?.categoryName === 'Beauty Treatments',
+                                          'bg-orange-100 text-orange-700': selectedService?.categoryName === 'Yoga & Meditation',
+                                          'bg-yellow-100 text-yellow-700': selectedService?.categoryName === 'Fitness'
                                       }">
-                                    <span x-text="selectedService?.category"></span>
+                                    <span x-text="selectedService?.categoryName"></span>
                                 </span>
                             </p>
                         </div>
@@ -1030,501 +1027,412 @@
     </main>
 
     <script>
-        function serviceManager() {
-            return {
-                // Sample service data with multiple images
-                services: [
-                    { 
-                        id: 1, 
-                        title: 'Ayurveda Treatment',
-                        description: 'Traditional Ayurvedic healing therapy with herbal oils and specialized massage techniques to balance doshas and promote overall wellness.',
-                        category: 'Ayurveda',
-                        duration: 90,
-                        fees: 8500,
-                        images: [
-                            'https://images.unsplash.com/photo-1544161515-4ab6ce6db874',
-                            'https://images.unsplash.com/photo-1600334129128-685c5582fd35'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-01-15'
-                    },
-                    { 
-                        id: 2, 
-                        title: 'Deep Tissue Massage',
-                        description: 'Intensive massage targeting deep muscle layers and connective tissue to relieve chronic tension and muscle pain.',
-                        category: 'Massage Therapy',
-                        duration: 60,
-                        fees: 6500,
-                        images: [
-                            'https://images.unsplash.com/photo-1544161515-4ab6ce6db874',
-                            'https://images.unsplash.com/photo-1600334129128-685c5582fd35',
-                            'https://images.unsplash.com/photo-1519823551278-64ac92734ab2'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-01-15'
-                    },
-                    { 
-                        id: 3, 
-                        title: 'Aromatherapy Massage',
-                        description: 'Relaxing massage using essential oils to enhance psychological and physical well-being.',
-                        category: 'Spa & Wellness',
-                        duration: 60,
-                        fees: 5500,
-                        images: [
-                            'https://images.unsplash.com/photo-1600334129128-685c5582fd35',
-                            'https://images.unsplash.com/photo-1544161515-4ab6ce6db874'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-02-10'
-                    },
-                    { 
-                        id: 4, 
-                        title: 'Facial Treatment',
-                        description: 'Rejuvenating facial with deep cleansing, exfoliation, and mask to restore skin radiance.',
-                        category: 'Beauty Treatments',
-                        duration: 45,
-                        fees: 4500,
-                        images: [
-                            'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881',
-                            'https://images.unsplash.com/photo-1519823551278-64ac92734ab2'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-02-10'
-                    },
-                    { 
-                        id: 5, 
-                        title: 'Hot Stone Massage',
-                        description: 'Therapeutic massage using heated stones to relax muscles and improve circulation.',
-                        category: 'Massage Therapy',
-                        duration: 75,
-                        fees: 7500,
-                        images: [
-                            'https://images.unsplash.com/photo-1519823551278-64ac92734ab2',
-                            'https://images.unsplash.com/photo-1600334129128-685c5582fd35'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-03-05'
-                    },
-                    { 
-                        id: 6, 
-                        title: 'Yoga Session',
-                        description: 'Private yoga session tailored to your skill level, focusing on asanas and breathing techniques.',
-                        category: 'Yoga & Meditation',
-                        duration: 60,
-                        fees: 3500,
-                        images: [
-                            'https://images.unsplash.com/photo-1545205597-3d9d02c29597',
-                            'https://images.unsplash.com/photo-1575052814086-f385e2e2ad1b'
-                        ],
-                        status: 'unavailable',
-                        createdDate: '2024-03-05'
-                    },
-                    { 
-                        id: 7, 
-                        title: 'Shirodhara Treatment',
-                        description: 'Ancient Ayurvedic therapy with warm oil poured on the forehead to calm the mind and nervous system.',
-                        category: 'Ayurveda',
-                        duration: 90,
-                        fees: 9500,
-                        images: [
-                            'https://images.unsplash.com/photo-1600334129128-685c5582fd35',
-                            'https://images.unsplash.com/photo-1544161515-4ab6ce6db874'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-04-20'
-                    },
-                    { 
-                        id: 8, 
-                        title: 'Personal Training',
-                        description: 'One-on-one fitness session with certified trainer to achieve your fitness goals.',
-                        category: 'Fitness',
-                        duration: 60,
-                        fees: 4000,
-                        images: [
-                            'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b',
-                            'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-05-12'
-                    },
-                    { 
-                        id: 9, 
-                        title: 'Complimentary Meditation',
-                        description: 'Guided meditation session for relaxation and mindfulness. Free for all guests.',
-                        category: 'Yoga & Meditation',
-                        duration: 0,
-                        fees: 0,
-                        images: [
-                            'https://images.unsplash.com/photo-1506126613408-eca07ce68773',
-                            'https://images.unsplash.com/photo-1593811167562-9cef47bfc4d7'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-06-01'
-                    },
-                    { 
-                        id: 10, 
-                        title: 'Unlimited Spa Access',
-                        description: 'Full day access to all spa facilities including sauna, steam room, and relaxation areas.',
-                        category: 'Spa & Wellness',
-                        duration: 0,
-                        fees: 12000,
-                        images: [
-                            'https://images.unsplash.com/photo-1540555700478-4be289fbecef',
-                            'https://images.unsplash.com/photo-1560750588-73207b1ef5b8'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-06-15'
+    function serviceManager() {
+        return {
+            services: [],
+            categories: [],
+            allServices: [], // Store all services for filtering
+            
+            searchQuery: '',
+            statusFilter: 'all',
+            categoryFilter: 'all',
+            durationFilter: 'all',
+            priceMin: '',
+            priceMax: '',
+            
+            currentPage: 1,
+            itemsPerPage: 10,
+            currentImageIndex: 0,
+            
+            // Modal properties
+            showServiceFormModal: false,
+            showViewModal: false,
+            showDeleteModal: false,
+            
+            selectedService: null,
+            formMode: 'new', // 'new' or 'edit'
+            
+            formData: {
+                id: null,
+                title: '',
+                description: '',
+                categoryId: '',
+                duration: '',
+                fees: '',
+                images: [],
+                status: 'available'
+            },
+            
+            // Initialize data
+            async init() {
+                await this.loadServices();
+                await this.loadCategories();
+                
+                // Watch for filtered services changes
+                this.$watch('filteredServices', () => {
+                    this.currentPage = 1;
+                });
+            },
+            
+            // Load services from API
+            async loadServices() {
+                try {
+                    const response = await fetch('${pageContext.request.contextPath}/manageservices/api/list');
+                    this.services = await response.json();
+                    this.allServices = [...this.services];
+                } catch (error) {
+                    console.error('Error loading services:', error);
+                    if (window.showError) {
+                        window.showError('Failed to load services', 3000);
                     }
-                ],
-                
-                searchQuery: '',
-                statusFilter: 'all',
-                categoryFilter: 'all',
-                durationFilter: 'all',
-                priceMin: '',
-                priceMax: '',
-                
-                currentPage: 1,
-                itemsPerPage: 10,
-                currentImageIndex: 0,
-                
-                // Modal properties
-                showServiceFormModal: false,
-                showViewModal: false,
-                showDeleteModal: false,
-                
-                selectedService: null,
-                formMode: 'new', // 'new' or 'edit'
-                
-                formData: {
+                }
+            },
+            
+            // Load categories from API
+            async loadCategories() {
+                try {
+                    const response = await fetch('${pageContext.request.contextPath}/servicecategory/api/list');
+                    this.categories = await response.json();
+                } catch (error) {
+                    console.error('Error loading categories:', error);
+                    if (window.showError) {
+                        window.showError('Failed to load categories', 3000);
+                    }
+                }
+            },
+            
+            get filteredServices() {
+                return this.allServices.filter(service => {
+                    // Search filter - title and description
+                    if (this.searchQuery) {
+                        const query = this.searchQuery.toLowerCase();
+                        const matchesSearch = service.title?.toLowerCase().includes(query) ||
+                                            service.description?.toLowerCase().includes(query);
+                        if (!matchesSearch) return false;
+                    }
+                    
+                    // Status filter
+                    if (this.statusFilter !== 'all' && service.status !== this.statusFilter) {
+                        return false;
+                    }
+                    
+                    // Category filter (by ID)
+                    if (this.categoryFilter !== 'all' && service.categoryId != this.categoryFilter) {
+                        return false;
+                    }
+                    
+                    // Duration filter
+                    if (this.durationFilter !== 'all') {
+                        const filterDuration = parseInt(this.durationFilter);
+                        if (service.duration !== filterDuration) return false;
+                    }
+                    
+                    // Price range filter
+                    if (this.priceMin !== '' && this.priceMin !== null) {
+                        const minPrice = parseFloat(this.priceMin);
+                        if (service.fees < minPrice) return false;
+                    }
+                    
+                    if (this.priceMax !== '' && this.priceMax !== null) {
+                        const maxPrice = parseFloat(this.priceMax);
+                        if (service.fees > maxPrice) return false;
+                    }
+                    
+                    return true;
+                });
+            },
+            
+            get paginatedServices() {
+                const start = (this.currentPage - 1) * this.itemsPerPage;
+                const end = start + this.itemsPerPage;
+                return this.filteredServices.slice(start, end);
+            },
+            
+            get totalPages() {
+                return Math.ceil(this.filteredServices.length / this.itemsPerPage);
+            },
+            
+            // Count methods
+            getAvailableCount() {
+                return this.services.filter(s => s.status === 'available').length;
+            },
+            
+            getUnavailableCount() {
+                return this.services.filter(s => s.status === 'unavailable').length;
+            },
+            
+            formatDate(dateString) {
+                if (!dateString) return '';
+                const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                return new Date(dateString).toLocaleDateString('en-US', options);
+            },
+            
+            formatShortDate(dateString) {
+                if (!dateString) return '';
+                const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                return new Date(dateString).toLocaleDateString('en-US', options);
+            },
+            
+            formatPrice(price) {
+                if (!price) return '0';
+                return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+            },
+            
+            // Reset form data
+            resetFormData() {
+                this.formData = {
                     id: null,
                     title: '',
                     description: '',
-                    category: '',
+                    categoryId: '',
                     duration: '',
                     fees: '',
                     images: [],
                     status: 'available'
-                },
+                };
+            },
+            
+            // Handle multiple image upload
+            async handleImageUpload(event) {
+                const files = event.target.files;
+                const formData = new FormData();
                 
-                // Get category counts for dropdown
-                getCategoryCounts: function() {
-                    var counts = {};
-                    this.services.forEach(function(service) {
-                        if (counts[service.category]) {
-                            counts[service.category]++;
-                        } else {
-                            counts[service.category] = 1;
-                        }
+                for (let i = 0; i < files.length; i++) {
+                    formData.append('images', files[i]);
+                }
+                
+                try {
+                    const response = await fetch('${pageContext.request.contextPath}/manageservices/api/upload', {
+                        method: 'POST',
+                        body: formData
                     });
                     
-                    // Convert to array and sort by count
-                    var result = [];
-                    for (var category in counts) {
-                        result.push({
-                            name: category,
-                            count: counts[category]
-                        });
-                    }
-                    return result.sort(function(a, b) { return b.count - a.count; });
-                },
-                
-                get filteredServices() {
-                    return this.services.filter(service => {
-                        // Search filter - title and description
-                        if (this.searchQuery) {
-                            var query = this.searchQuery.toLowerCase();
-                            var matchesSearch = service.title.toLowerCase().includes(query) ||
-                                                service.description.toLowerCase().includes(query);
-                            if (!matchesSearch) return false;
-                        }
-                        
-                        // Status filter
-                        if (this.statusFilter !== 'all' && service.status !== this.statusFilter) {
-                            return false;
-                        }
-                        
-                        // Category filter
-                        if (this.categoryFilter !== 'all' && service.category !== this.categoryFilter) {
-                            return false;
-                        }
-                        
-                        // Duration filter
-                        if (this.durationFilter !== 'all') {
-                            var filterDuration = parseInt(this.durationFilter);
-                            if (service.duration !== filterDuration) return false;
-                        }
-                        
-                        // Price range filter
-                        if (this.priceMin !== '' && this.priceMin !== null) {
-                            var minPrice = parseFloat(this.priceMin);
-                            if (service.fees < minPrice) return false;
-                        }
-                        
-                        if (this.priceMax !== '' && this.priceMax !== null) {
-                            var maxPrice = parseFloat(this.priceMax);
-                            if (service.fees > maxPrice) return false;
-                        }
-                        
-                        return true;
-                    });
-                },
-                
-                get paginatedServices() {
-                    var start = (this.currentPage - 1) * this.itemsPerPage;
-                    var end = start + this.itemsPerPage;
-                    return this.filteredServices.slice(start, end);
-                },
-                
-                get totalPages() {
-                    return Math.ceil(this.filteredServices.length / this.itemsPerPage);
-                },
-                
-                // Count methods
-                getAvailableCount: function() {
-                    return this.services.filter(function(s) { return s.status === 'available'; }).length;
-                },
-                
-                getUnavailableCount: function() {
-                    return this.services.filter(function(s) { return s.status === 'unavailable'; }).length;
-                },
-                
-                getCategoriesCount: function() {
-                    var categories = {};
-                    this.services.forEach(function(service) {
-                        categories[service.category] = true;
-                    });
-                    return Object.keys(categories).length;
-                },
-                
-                init: function() {
-                    var self = this;
-                    
-                    // Reset to first page when filters change
-                    this.$watch('filteredServices', function() {
-                        self.currentPage = 1;
-                    });
-                    
-                    console.log('Service Manager initialized');
-                },
-                
-                formatDate: function(dateString) {
-                    if (!dateString) return '';
-                    var options = { year: 'numeric', month: 'short', day: 'numeric' };
-                    return new Date(dateString).toLocaleDateString('en-US', options);
-                },
-                
-                formatShortDate: function(dateString) {
-                    if (!dateString) return '';
-                    var options = { year: 'numeric', month: 'short', day: 'numeric' };
-                    return new Date(dateString).toLocaleDateString('en-US', options);
-                },
-                
-                formatPrice: function(price) {
-                    if (!price) return '0';
-                    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                },
-                
-                // Reset form data
-                resetFormData: function() {
-                    this.formData = {
-                        id: null,
-                        title: '',
-                        description: '',
-                        category: '',
-                        duration: '',
-                        fees: '',
-                        images: [],
-                        status: 'available'
-                    };
-                },
-                
-                // Handle multiple image upload
-                handleImageUpload: function(event) {
-                    var files = event.target.files;
-                    var self = this;
-                    
-                    for (var i = 0; i < files.length; i++) {
-                        var file = files[i];
-                        var reader = new FileReader();
-                        
-                        reader.onload = function(e) {
-                            self.formData.images.push(e.target.result);
-                        };
-                        
-                        reader.readAsDataURL(file);
-                    }
-                },
-                
-                // Remove image
-                removeImage: function(index) {
-                    this.formData.images.splice(index, 1);
-                },
-                
-                // Open new service modal
-                openNewServiceModal: function() {
-                    this.resetFormData();
-                    this.formMode = 'new';
-                    this.showServiceFormModal = true;
-                },
-                
-                // Edit service
-                editService: function(service) {
-                    this.formData = {
-                        id: service.id,
-                        title: service.title,
-                        description: service.description,
-                        category: service.category,
-                        duration: service.duration,
-                        fees: service.fees,
-                        images: service.images ? [...service.images] : [],
-                        status: service.status
-                    };
-                    this.formMode = 'edit';
-                    this.showServiceFormModal = true;
-                },
-                
-                // Close service form modal
-                closeServiceFormModal: function() {
-                    this.showServiceFormModal = false;
-                },
-                
-                // Save service (new or edit)
-                saveService: function() {
-                    var self = this;
-                    
-                    if (this.formMode === 'new') {
-                        // Create new service
-                        var newService = {
-                            id: this.services.length + 1,
-                            title: this.formData.title,
-                            description: this.formData.description,
-                            category: this.formData.category,
-                            duration: parseInt(this.formData.duration),
-                            fees: parseInt(this.formData.fees),
-                            images: this.formData.images.length > 0 ? this.formData.images : [],
-                            status: this.formData.status,
-                            createdDate: new Date().toISOString().split('T')[0]
-                        };
-                        this.services.push(newService);
-                        
+                    const result = await response.json();
+                    if (result.success) {
+                        this.formData.images.push(...result.images);
                         if (window.showSuccess) {
-                            window.showSuccess('Service added successfully', 3000);
+                            window.showSuccess('Images uploaded successfully', 3000);
                         }
                     } else {
-                        // Update existing service
-                        var index = this.services.findIndex(function(s) { return s.id === self.formData.id; });
-                        if (index !== -1) {
-                            this.services[index] = {
-                                ...this.services[index],
-                                title: this.formData.title,
-                                description: this.formData.description,
-                                category: this.formData.category,
-                                duration: parseInt(this.formData.duration),
-                                fees: parseInt(this.formData.fees),
-                                images: this.formData.images.length > 0 ? this.formData.images : [],
-                                status: this.formData.status
-                            };
-                        }
-                        
-                        if (window.showSuccess) {
-                            window.showSuccess('Service updated successfully', 3000);
+                        if (window.showError) {
+                            window.showError(result.message || 'Failed to upload images', 3000);
                         }
                     }
+                } catch (error) {
+                    console.error('Error uploading images:', error);
+                    if (window.showError) {
+                        window.showError('Failed to upload images', 3000);
+                    }
+                }
+            },
+            
+            // Remove image
+            removeImage(index) {
+                this.formData.images.splice(index, 1);
+            },
+            
+            // Open new service modal
+            openNewServiceModal() {
+                this.resetFormData();
+                this.formMode = 'new';
+                this.showServiceFormModal = true;
+            },
+            
+            // Edit service
+            editService(service) {
+                this.formData = {
+                    id: service.id,
+                    title: service.title,
+                    description: service.description,
+                    categoryId: service.categoryId,
+                    duration: service.duration,
+                    fees: service.fees,
+                    images: service.images ? [...service.images] : [],
+                    status: service.status
+                };
+                this.formMode = 'edit';
+                this.showServiceFormModal = true;
+            },
+            
+            // Close service form modal
+            closeServiceFormModal() {
+                this.showServiceFormModal = false;
+            },
+            
+            // Save service (new or edit)
+            async saveService() {
+                try {
+                    const url = this.formMode === 'new' 
+                        ? '${pageContext.request.contextPath}/manageservices/api/create'
+                        : '${pageContext.request.contextPath}/manageservices/api/' + this.formData.id;
                     
-                    this.closeServiceFormModal();
-                },
-                
-                // View service details
-                viewService: function(service) {
-                    this.selectedService = service;
+                    const method = this.formMode === 'new' ? 'POST' : 'PUT';
+                    
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(this.formData)
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        await this.loadServices();
+                        this.closeServiceFormModal();
+                        if (window.showSuccess) {
+                            window.showSuccess(result.message, 3000);
+                        }
+                    } else {
+                        if (window.showError) {
+                            window.showError(result.message, 3000);
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error saving service:', error);
+                    if (window.showError) {
+                        window.showError('Failed to save service', 3000);
+                    }
+                }
+            },
+            
+            // View service details
+            viewService(service) {
+                this.selectedService = service;
+                this.currentImageIndex = 0;
+                this.showViewModal = true;
+            },
+            
+            // Image navigation
+            prevImage() {
+                if (this.currentImageIndex > 0) {
+                    this.currentImageIndex--;
+                } else {
+                    this.currentImageIndex = this.selectedService.images.length - 1;
+                }
+            },
+            
+            nextImage() {
+                if (this.currentImageIndex < this.selectedService.images.length - 1) {
+                    this.currentImageIndex++;
+                } else {
                     this.currentImageIndex = 0;
-                    this.showViewModal = true;
-                },
-                
-                // Image navigation
-                prevImage: function() {
-                    if (this.currentImageIndex > 0) {
-                        this.currentImageIndex--;
-                    } else {
-                        this.currentImageIndex = this.selectedService.images.length - 1;
-                    }
-                },
-                
-                nextImage: function() {
-                    if (this.currentImageIndex < this.selectedService.images.length - 1) {
-                        this.currentImageIndex++;
-                    } else {
-                        this.currentImageIndex = 0;
-                    }
-                },
-                
-                // Confirm delete
-                confirmDelete: function(service) {
-                    this.selectedService = service;
-                    this.showDeleteModal = true;
-                },
-                
-                // Delete service
-                deleteService: function() {
-                    var self = this;
-                    var index = this.services.findIndex(function(s) { return s.id === self.selectedService.id; });
-                    if (index !== -1) {
-                        this.services.splice(index, 1);
+                }
+            },
+            
+            // Confirm delete
+            confirmDelete(service) {
+                this.selectedService = service;
+                this.showDeleteModal = true;
+            },
+            
+            // Delete service
+            async deleteService() {
+                try {
+                    const response = await fetch('${pageContext.request.contextPath}/manageservices/api/' + this.selectedService.id, {
+                        method: 'DELETE'
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        await this.loadServices();
+                        this.showDeleteModal = false;
+                        this.selectedService = null;
+                        
+                        // Adjust current page if necessary
+                        if (this.paginatedServices.length === 0 && this.currentPage > 1) {
+                            this.currentPage--;
+                        }
                         
                         if (window.showSuccess) {
-                            window.showSuccess('Service deleted successfully', 3000);
+                            window.showSuccess(result.message, 3000);
+                        }
+                    } else {
+                        if (window.showError) {
+                            window.showError(result.message, 3000);
                         }
                     }
-                    
-                    this.showDeleteModal = false;
-                    this.selectedService = null;
-                    
-                    // Adjust current page if necessary
-                    if (this.paginatedServices.length === 0 && this.currentPage > 1) {
-                        this.currentPage--;
+                } catch (error) {
+                    console.error('Error deleting service:', error);
+                    if (window.showError) {
+                        window.showError('Failed to delete service', 3000);
                     }
-                },
-                
-                clearFilters: function() {
-                    this.searchQuery = '';
-                    this.statusFilter = 'all';
-                    this.categoryFilter = 'all';
-                    this.durationFilter = 'all';
-                    this.priceMin = '';
-                    this.priceMax = '';
-                    this.currentPage = 1;
-                    
-                    if (window.showInfo) {
-                        window.showInfo('Filters cleared', 3000);
+                }
+            },
+            
+            // Search with debounce
+            async performSearch() {
+                if (this.searchQuery.length > 2) {
+                    try {
+                        const response = await fetch('${pageContext.request.contextPath}/manageservices/api/search?q=' + encodeURIComponent(this.searchQuery));
+                        this.allServices = await response.json();
+                    } catch (error) {
+                        console.error('Error searching services:', error);
                     }
-                },
+                } else if (this.searchQuery.length === 0) {
+                    this.allServices = [...this.services];
+                }
+                this.currentPage = 1;
+            },
+            
+            // Apply filters
+            async applyFilters() {
+                const params = new URLSearchParams();
+                if (this.searchQuery) params.append('keyword', this.searchQuery);
+                if (this.categoryFilter !== 'all') params.append('categoryId', this.categoryFilter);
+                if (this.statusFilter !== 'all') params.append('status', this.statusFilter);
+                if (this.durationFilter !== 'all') params.append('duration', this.durationFilter);
+                if (this.priceMin) params.append('minFees', this.priceMin);
+                if (this.priceMax) params.append('maxFees', this.priceMax);
                 
-                applyFilters: function() {
+                try {
+                    const response = await fetch('${pageContext.request.contextPath}/manageservices/api/advanced-search?' + params.toString());
+                    this.allServices = await response.json();
                     this.currentPage = 1;
                     
                     if (window.showSuccess) {
                         window.showSuccess('Filters applied', 3000);
                     }
-                },
-                
-                prevPage: function() {
-                    if (this.currentPage > 1) {
-                        this.currentPage--;
-                    }
-                },
-                
-                nextPage: function() {
-                    if (this.currentPage < this.totalPages) {
-                        this.currentPage++;
-                    }
-                },
-                
-                goToPage: function(page) {
-                    this.currentPage = page;
+                } catch (error) {
+                    console.error('Error applying filters:', error);
                 }
+            },
+            
+            // Clear filters
+            clearFilters() {
+                this.searchQuery = '';
+                this.statusFilter = 'all';
+                this.categoryFilter = 'all';
+                this.durationFilter = 'all';
+                this.priceMin = '';
+                this.priceMax = '';
+                this.allServices = [...this.services];
+                this.currentPage = 1;
+                
+                if (window.showInfo) {
+                    window.showInfo('Filters cleared', 3000);
+                }
+            },
+            
+            prevPage() {
+                if (this.currentPage > 1) {
+                    this.currentPage--;
+                }
+            },
+            
+            nextPage() {
+                if (this.currentPage < this.totalPages) {
+                    this.currentPage++;
+                }
+            },
+            
+            goToPage(page) {
+                this.currentPage = page;
             }
         }
-    </script>
+    }
+</script>
 </body>
 </html>

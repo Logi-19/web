@@ -293,6 +293,20 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        /* Loading spinner */
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #0284a8;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
     </style>
 </head>
 <body class="bg-[#f0f7fa] text-[#1e3c5c] antialiased flex">
@@ -338,7 +352,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-[#3a5a78] text-sm font-medium">Total Tables</p>
-                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="tables.length"></p>
+                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="stats.total"></p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-[#b5e5e0]/30 flex items-center justify-center">
                             <span class="text-2xl">🍽️</span>
@@ -351,7 +365,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-[#3a5a78] text-sm font-medium">Available</p>
-                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="getAvailableCount()"></p>
+                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="stats.available"></p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-[#b5e5e0] flex items-center justify-center">
                             <span class="text-2xl">✅</span>
@@ -364,7 +378,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <p class="text-[#3a5a78] text-sm font-medium">Maintenance</p>
-                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="getMaintenanceCount()"></p>
+                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="stats.maintenance"></p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
                             <span class="text-2xl">🔧</span>
@@ -377,7 +391,7 @@
                     <div class="flex items-center justify-between cursor-pointer" @click="showLocations = !showLocations">
                         <div>
                             <p class="text-[#3a5a78] text-sm font-medium">Locations</p>
-                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="getLocationsCount()"></p>
+                            <p class="text-3xl font-bold text-[#1e3c5c]" x-text="locationStats.length"></p>
                         </div>
                         <div class="w-12 h-12 rounded-full bg-[#9ac9c2] flex items-center justify-center">
                             <span class="text-2xl">📍</span>
@@ -389,7 +403,7 @@
                          @click.away="showLocations = false"
                          class="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-xl border border-[#b5e5e0] z-20 location-dropdown">
                         <div class="p-2">
-                            <template x-for="location in getLocationCounts()" :key="location.name">
+                            <template x-for="location in locationStats" :key="location.name">
                                 <div class="location-option">
                                     <span class="text-sm text-[#1e3c5c]" x-text="location.name"></span>
                                     <span class="location-count" x-text="location.count"></span>
@@ -406,6 +420,7 @@
                 <div class="relative">
                     <input type="text" 
                            x-model="searchQuery"
+                           @input.debounce.300ms="performSearch()"
                            placeholder="Search by table prefix or table number..." 
                            class="w-full pl-10 pr-4 py-3 rounded-xl border border-[#b5e5e0] focus:outline-none focus:ring-2 focus:ring-[#0284a8] focus:border-transparent text-sm">
                     <span class="absolute left-3 top-3.5 text-[#3a5a78] text-lg">🔍</span>
@@ -416,7 +431,7 @@
                     <!-- Status Filter -->
                     <div>
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Status</label>
-                        <select x-model="statusFilter" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
+                        <select x-model="statusFilter" @change="applyFilters()" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                             <option value="all">All Status</option>
                             <option value="available">Available</option>
                             <option value="maintenance">Maintenance</option>
@@ -426,10 +441,10 @@
                     <!-- Location Filter -->
                     <div>
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Location</label>
-                        <select x-model="locationFilter" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
+                        <select x-model="locationFilter" @change="applyFilters()" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                             <option value="all">All Locations</option>
-                            <template x-for="location in getLocationCounts()" :key="location.name">
-                                <option :value="location.name" x-text="location.name"></option>
+                            <template x-for="location in locations" :key="location.id">
+                                <option :value="location.id" x-text="location.name"></option>
                             </template>
                         </select>
                     </div>
@@ -437,7 +452,7 @@
                     <!-- Capacity Filter -->
                     <div>
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Min Capacity</label>
-                        <select x-model="capacityFilter" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
+                        <select x-model="capacityFilter" @change="applyFilters()" class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                             <option value="all">Any</option>
                             <option value="2">2+ Persons</option>
                             <option value="4">4+ Persons</option>
@@ -452,14 +467,20 @@
                     <button @click="clearFilters()" class="px-4 py-2 rounded-lg border border-[#b5e5e0] text-[#1e3c5c] hover:bg-[#b5e5e0]/20 transition text-sm font-medium">
                         Clear Filters
                     </button>
-                    <button @click="applyFilters()" class="px-4 py-2 rounded-lg bg-[#0284a8] text-white hover:bg-[#03738C] transition text-sm font-medium">
-                        Apply Filters
+                    <button @click="refreshData()" class="px-4 py-2 rounded-lg bg-[#0284a8] text-white hover:bg-[#03738C] transition text-sm font-medium">
+                        Refresh
                     </button>
                 </div>
             </div>
 
+            <!-- Loading Indicator -->
+            <div x-show="loading" class="text-center py-12">
+                <div class="loading-spinner"></div>
+                <p class="text-[#3a5a78] mt-4">Loading tables...</p>
+            </div>
+
             <!-- Tables Table -->
-            <div class="bg-white rounded-2xl shadow-md border border-[#b5e5e0] overflow-hidden">
+            <div x-show="!loading" class="bg-white rounded-2xl shadow-md border border-[#b5e5e0] overflow-hidden">
                 <div class="table-container">
                     <table>
                         <thead>
@@ -491,14 +512,14 @@
                                     <td>
                                         <span class="location-badge text-xs"
                                               :class="{
-                                                  'bg-blue-100 text-blue-700': table.location === '1st Floor',
-                                                  'bg-green-100 text-green-700': table.location === '2nd Floor',
-                                                  'bg-purple-100 text-purple-700': table.location === 'Beachside',
-                                                  'bg-yellow-100 text-yellow-700': table.location === 'Poolside',
-                                                  'bg-pink-100 text-pink-700': table.location === 'Rooftop',
-                                                  'bg-orange-100 text-orange-700': table.location === 'Garden'
+                                                  'bg-blue-100 text-blue-700': table.locationName === '1st Floor',
+                                                  'bg-green-100 text-green-700': table.locationName === '2nd Floor',
+                                                  'bg-purple-100 text-purple-700': table.locationName === 'Beachside',
+                                                  'bg-yellow-100 text-yellow-700': table.locationName === 'Poolside',
+                                                  'bg-pink-100 text-pink-700': table.locationName === 'Rooftop',
+                                                  'bg-orange-100 text-orange-700': table.locationName === 'Garden'
                                               }">
-                                            <span x-text="table.location"></span>
+                                            <span x-text="table.locationName"></span>
                                         </span>
                                     </td>
                                     
@@ -586,7 +607,7 @@
             </div>
 
             <!-- No Results Message -->
-            <div x-show="filteredTables.length === 0" class="text-center py-12">
+            <div x-show="!loading && filteredTables.length === 0" class="text-center py-12">
                 <span class="text-5xl mb-3 block">🍽️</span>
                 <p class="text-lg text-[#3a5a78]">No tables found matching your filters</p>
                 <button @click="clearFilters()" class="mt-4 px-6 py-2 rounded-lg bg-[#0284a8] text-white hover:bg-[#03738C] transition text-sm font-medium">
@@ -595,7 +616,7 @@
             </div>
 
             <!-- Pagination with Items Per Page Selector -->
-            <div x-show="filteredTables.length > 0" class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
+            <div x-show="!loading && filteredTables.length > 0" class="flex flex-col sm:flex-row justify-between items-center gap-4 mt-6">
                 <div class="flex items-center gap-2">
                     <span class="text-sm text-[#3a5a78]">Show:</span>
                     <select x-model="itemsPerPage" @change="currentPage = 1" 
@@ -671,8 +692,10 @@
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Table Number *</label>
                         <input type="text" 
                                x-model="formData.tableNo"
+                               @blur="checkTableNumberExists"
                                required
                                class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
+                        <div x-show="tableNumberExists" class="text-red-500 text-xs mt-1">Table number already exists</div>
                     </div>
 
                     <!-- Description -->
@@ -684,19 +707,16 @@
                                   class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]"></textarea>
                     </div>
 
-                    <!-- Location -->
+                    <!-- Location (from TableLocation) -->
                     <div>
                         <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Location *</label>
-                        <select x-model="formData.location"
+                        <select x-model="formData.locationId"
                                 required
                                 class="w-full border border-[#b5e5e0] rounded-xl px-3 py-2.5 text-[#1e3c5c] text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                             <option value="">Select Location</option>
-                            <option value="1st Floor">1st Floor</option>
-                            <option value="2nd Floor">2nd Floor</option>
-                            <option value="Beachside">Beachside</option>
-                            <option value="Poolside">Poolside</option>
-                            <option value="Rooftop">Rooftop</option>
-                            <option value="Garden">Garden</option>
+                            <template x-for="location in locations" :key="location.id">
+                                <option :value="location.id" x-text="location.name"></option>
+                            </template>
                         </select>
                     </div>
 
@@ -756,7 +776,8 @@
                             Cancel
                         </button>
                         <button type="submit" 
-                                class="px-4 py-2 rounded-lg bg-[#0284a8] text-white hover:bg-[#03738C] transition text-sm font-medium">
+                                :disabled="tableNumberExists && formMode === 'new'"
+                                class="px-4 py-2 rounded-lg bg-[#0284a8] text-white hover:bg-[#03738C] transition text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed">
                             <span x-text="formMode === 'new' ? 'Add Table' : 'Update Table'"></span>
                         </button>
                     </div>
@@ -846,14 +867,14 @@
                             <p class="font-medium">
                                 <span class="location-badge"
                                       :class="{
-                                          'bg-blue-100 text-blue-700': selectedTable?.location === '1st Floor',
-                                          'bg-green-100 text-green-700': selectedTable?.location === '2nd Floor',
-                                          'bg-purple-100 text-purple-700': selectedTable?.location === 'Beachside',
-                                          'bg-yellow-100 text-yellow-700': selectedTable?.location === 'Poolside',
-                                          'bg-pink-100 text-pink-700': selectedTable?.location === 'Rooftop',
-                                          'bg-orange-100 text-orange-700': selectedTable?.location === 'Garden'
+                                          'bg-blue-100 text-blue-700': selectedTable?.locationName === '1st Floor',
+                                          'bg-green-100 text-green-700': selectedTable?.locationName === '2nd Floor',
+                                          'bg-purple-100 text-purple-700': selectedTable?.locationName === 'Beachside',
+                                          'bg-yellow-100 text-yellow-700': selectedTable?.locationName === 'Poolside',
+                                          'bg-pink-100 text-pink-700': selectedTable?.locationName === 'Rooftop',
+                                          'bg-orange-100 text-orange-700': selectedTable?.locationName === 'Garden'
                                       }">
-                                    <span x-text="selectedTable?.location"></span>
+                                    <span x-text="selectedTable?.locationName"></span>
                                 </span>
                             </p>
                         </div>
@@ -940,123 +961,15 @@
     <script>
         function tableManager() {
             return {
-                // Sample table data with multiple images
-                tables: [
-                    { 
-                        id: 1, 
-                        tablePrefix: 'T-00001',
-                        tableNo: 'T01',
-                        description: 'Cozy table for two with garden view, perfect for intimate dinners.',
-                        location: 'Garden',
-                        capacity: 2,
-                        images: [
-                            'https://images.unsplash.com/photo-1578474846511-04ba529f0b88',
-                            'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-01-15'
-                    },
-                    { 
-                        id: 2, 
-                        tablePrefix: 'T-00002',
-                        tableNo: 'T02',
-                        description: 'Romantic beachside table with ocean view, ideal for sunset dining.',
-                        location: 'Beachside',
-                        capacity: 2,
-                        images: [
-                            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5',
-                            'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4',
-                            'https://images.unsplash.com/photo-1414235077428-338989a2e8c0'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-01-15'
-                    },
-                    { 
-                        id: 3, 
-                        tablePrefix: 'T-00003',
-                        tableNo: 'T03',
-                        description: 'Family-sized table on the 1st floor, close to the buffet area.',
-                        location: '1st Floor',
-                        capacity: 6,
-                        images: [
-                            'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4',
-                            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-02-10'
-                    },
-                    { 
-                        id: 4, 
-                        tablePrefix: 'T-00004',
-                        tableNo: 'T04',
-                        description: 'Private table in the corner with pool view, great for groups.',
-                        location: 'Poolside',
-                        capacity: 4,
-                        images: [
-                            'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c',
-                            'https://images.unsplash.com/photo-1578474846511-04ba529f0b88'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-02-10'
-                    },
-                    { 
-                        id: 5, 
-                        tablePrefix: 'T-00005',
-                        tableNo: 'T05',
-                        description: 'Rooftop table with panoramic views of the ocean and sunset.',
-                        location: 'Rooftop',
-                        capacity: 4,
-                        images: [
-                            'https://images.unsplash.com/photo-1551632436-cbf8dd35adfa',
-                            'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4',
-                            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-03-05'
-                    },
-                    { 
-                        id: 6, 
-                        tablePrefix: 'T-00006',
-                        tableNo: 'T06',
-                        description: 'Large group table on the 2nd floor, can accommodate up to 8 people.',
-                        location: '2nd Floor',
-                        capacity: 8,
-                        images: [
-                            'https://images.unsplash.com/photo-1466978913421-dad2ebd01d17',
-                            'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4'
-                        ],
-                        status: 'maintenance',
-                        createdDate: '2024-03-05'
-                    },
-                    { 
-                        id: 7, 
-                        tablePrefix: 'T-00007',
-                        tableNo: 'T07',
-                        description: 'Premium beachside table with private waiter service.',
-                        location: 'Beachside',
-                        capacity: 4,
-                        images: [
-                            'https://images.unsplash.com/photo-1555396273-367ea4eb4db5',
-                            'https://images.unsplash.com/photo-1414235077428-338989a2e8c0'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-04-20'
-                    },
-                    { 
-                        id: 8, 
-                        tablePrefix: 'T-00008',
-                        tableNo: 'T08',
-                        description: 'Quiet garden table surrounded by tropical plants.',
-                        location: 'Garden',
-                        capacity: 4,
-                        images: [
-                            'https://images.unsplash.com/photo-1578474846511-04ba529f0b88',
-                            'https://images.unsplash.com/photo-1550966871-3ed3cdb5ed0c'
-                        ],
-                        status: 'available',
-                        createdDate: '2024-05-12'
-                    }
-                ],
+                // Data properties
+                tables: [],
+                locations: [],
+                locationStats: [],
+                stats: {
+                    total: 0,
+                    available: 0,
+                    maintenance: 0
+                },
                 
                 searchQuery: '',
                 statusFilter: 'all',
@@ -1066,6 +979,8 @@
                 currentPage: 1,
                 itemsPerPage: 10,
                 currentImageIndex: 0,
+                loading: false,
+                tableNumberExists: false,
                 
                 // Modal properties
                 showTableFormModal: false,
@@ -1080,62 +995,41 @@
                     tablePrefix: '',
                     tableNo: '',
                     description: '',
-                    location: '',
+                    locationId: '',
                     capacity: '',
                     images: [],
                     status: 'available'
                 },
                 
-                // Get location counts for dropdown
-                getLocationCounts: function() {
-                    var counts = {};
-                    this.tables.forEach(function(table) {
-                        if (counts[table.location]) {
-                            counts[table.location]++;
-                        } else {
-                            counts[table.location] = 1;
-                        }
-                    });
-                    
-                    // Convert to array and sort by count
-                    var result = [];
-                    for (var location in counts) {
-                        result.push({
-                            name: location,
-                            count: counts[location]
-                        });
-                    }
-                    return result.sort(function(a, b) { return b.count - a.count; });
-                },
-                
                 get filteredTables() {
-                    return this.tables.filter(table => {
-                        // Search filter - only table prefix and table number
-                        if (this.searchQuery) {
-                            var query = this.searchQuery.toLowerCase();
-                            var matchesSearch = table.tablePrefix.toLowerCase().includes(query) ||
-                                                table.tableNo.toLowerCase().includes(query);
-                            if (!matchesSearch) return false;
-                        }
-                        
-                        // Status filter
-                        if (this.statusFilter !== 'all' && table.status !== this.statusFilter) {
-                            return false;
-                        }
-                        
-                        // Location filter
-                        if (this.locationFilter !== 'all' && table.location !== this.locationFilter) {
-                            return false;
-                        }
-                        
-                        // Capacity filter
-                        if (this.capacityFilter !== 'all') {
-                            var minCapacity = parseInt(this.capacityFilter);
-                            if (table.capacity < minCapacity) return false;
-                        }
-                        
-                        return true;
-                    });
+                    let filtered = this.tables;
+                    
+                    // Search filter
+                    if (this.searchQuery) {
+                        var query = this.searchQuery.toLowerCase();
+                        filtered = filtered.filter(table => 
+                            table.tablePrefix.toLowerCase().includes(query) ||
+                            table.tableNo.toLowerCase().includes(query)
+                        );
+                    }
+                    
+                    // Status filter
+                    if (this.statusFilter !== 'all') {
+                        filtered = filtered.filter(table => table.status === this.statusFilter);
+                    }
+                    
+                    // Location filter
+                    if (this.locationFilter !== 'all') {
+                        filtered = filtered.filter(table => table.locationId == this.locationFilter);
+                    }
+                    
+                    // Capacity filter
+                    if (this.capacityFilter !== 'all') {
+                        var minCapacity = parseInt(this.capacityFilter);
+                        filtered = filtered.filter(table => table.capacity >= minCapacity);
+                    }
+                    
+                    return filtered;
                 },
                 
                 get paginatedTables() {
@@ -1148,32 +1042,93 @@
                     return Math.ceil(this.filteredTables.length / this.itemsPerPage);
                 },
                 
-                // Count methods
-                getAvailableCount: function() {
-                    return this.tables.filter(function(t) { return t.status === 'available'; }).length;
-                },
-                
-                getMaintenanceCount: function() {
-                    return this.tables.filter(function(t) { return t.status === 'maintenance'; }).length;
-                },
-                
-                getLocationsCount: function() {
-                    var locations = {};
-                    this.tables.forEach(function(table) {
-                        locations[table.location] = true;
-                    });
-                    return Object.keys(locations).length;
-                },
-                
                 init: function() {
-                    var self = this;
+                    this.refreshData();
+                    this.loadLocations();
                     
-                    // Reset to first page when filters change
+                    var self = this;
                     this.$watch('filteredTables', function() {
                         self.currentPage = 1;
                     });
+                },
+                
+                // API Calls
+                refreshData: function() {
+                    this.loading = true;
+                    var self = this;
                     
-                    console.log('Table Manager initialized');
+                    // Load tables
+                    fetch('${pageContext.request.contextPath}/managetables/api/list')
+                        .then(response => response.json())
+                        .then(data => {
+                            self.tables = data;
+                            self.loading = false;
+                        })
+                        .catch(error => {
+                            console.error('Error loading tables:', error);
+                            self.loading = false;
+                            if (window.showError) {
+                                window.showError('Failed to load tables', 3000);
+                            }
+                        });
+                    
+                    // Load stats
+                    fetch('${pageContext.request.contextPath}/managetables/api/stats')
+                        .then(response => response.json())
+                        .then(data => {
+                            self.stats = data;
+                        })
+                        .catch(error => console.error('Error loading stats:', error));
+                    
+                    // Load location stats
+                    fetch('${pageContext.request.contextPath}/managetables/api/location-stats')
+                        .then(response => response.json())
+                        .then(data => {
+                            self.locationStats = data;
+                        })
+                        .catch(error => console.error('Error loading location stats:', error));
+                },
+                
+                loadLocations: function() {
+                    var self = this;
+                    fetch('${pageContext.request.contextPath}/tablelocation/api/list')
+                        .then(response => response.json())
+                        .then(data => {
+                            self.locations = data;
+                        })
+                        .catch(error => console.error('Error loading locations:', error));
+                },
+                
+                performSearch: function() {
+                    if (this.searchQuery.length > 0) {
+                        this.loading = true;
+                        var self = this;
+                        
+                        fetch('${pageContext.request.contextPath}/managetables/api/search?q=' + encodeURIComponent(this.searchQuery))
+                            .then(response => response.json())
+                            .then(data => {
+                                self.tables = data;
+                                self.loading = false;
+                            })
+                            .catch(error => {
+                                console.error('Error searching tables:', error);
+                                self.loading = false;
+                            });
+                    } else {
+                        this.refreshData();
+                    }
+                },
+                
+                checkTableNumberExists: function() {
+                    if (this.formData.tableNo && this.formMode === 'new') {
+                        var self = this;
+                        fetch('${pageContext.request.contextPath}/managetables/api/exists?tableNo=' + encodeURIComponent(this.formData.tableNo))
+                            .then(response => response.json())
+                            .then(data => {
+                                self.tableNumberExists = data.exists;
+                            })
+                            .catch(error => console.error('Error checking table number:', error));
+                    }
                 },
                 
                 formatDate: function(dateString) {
@@ -1190,9 +1145,12 @@
                 
                 // Generate table prefix (for new tables)
                 generateTablePrefix: function() {
-                    var lastId = this.tables.length > 0 ? Math.max.apply(Math, this.tables.map(function(t) { return t.id; })) : 0;
-                    var newId = lastId + 1;
-                    return 'T-' + newId.toString().padStart(5, '0');
+                    fetch('${pageContext.request.contextPath}/managetables/api/next-prefix')
+                        .then(response => response.json())
+                        .then(data => {
+                            this.formData.tablePrefix = data.prefix;
+                        })
+                        .catch(error => console.error('Error getting next prefix:', error));
                 },
                 
                 // Handle multiple image upload
@@ -1200,16 +1158,35 @@
                     var files = event.target.files;
                     var self = this;
                     
+                    // Create FormData
+                    var formData = new FormData();
                     for (var i = 0; i < files.length; i++) {
-                        var file = files[i];
-                        var reader = new FileReader();
-                        
-                        reader.onload = function(e) {
-                            self.formData.images.push(e.target.result);
-                        };
-                        
-                        reader.readAsDataURL(file);
+                        formData.append('images', files[i]);
                     }
+                    
+                    // Upload images
+                    fetch('${pageContext.request.contextPath}/managetables/api/upload', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            data.images.forEach(function(imageUrl) {
+                                self.formData.images.push(imageUrl);
+                            });
+                        } else {
+                            if (window.showError) {
+                                window.showError('Failed to upload images', 3000);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error uploading images:', error);
+                        if (window.showError) {
+                            window.showError('Error uploading images', 3000);
+                        }
+                    });
                 },
                 
                 // Remove image
@@ -1221,20 +1198,22 @@
                 resetFormData: function() {
                     this.formData = {
                         id: null,
-                        tablePrefix: this.generateTablePrefix(),
+                        tablePrefix: '',
                         tableNo: '',
                         description: '',
-                        location: '',
+                        locationId: '',
                         capacity: '',
                         images: [],
                         status: 'available'
                     };
+                    this.generateTablePrefix();
                 },
                 
                 // Open new table modal
                 openNewTableModal: function() {
                     this.resetFormData();
                     this.formMode = 'new';
+                    this.tableNumberExists = false;
                     this.showTableFormModal = true;
                 },
                 
@@ -1245,12 +1224,13 @@
                         tablePrefix: table.tablePrefix,
                         tableNo: table.tableNo,
                         description: table.description,
-                        location: table.location,
+                        locationId: table.locationId,
                         capacity: table.capacity,
                         images: table.images ? [...table.images] : [],
                         status: table.status
                     };
                     this.formMode = 'edit';
+                    this.tableNumberExists = false;
                     this.showTableFormModal = true;
                 },
                 
@@ -1262,46 +1242,39 @@
                 // Save table (new or edit)
                 saveTable: function() {
                     var self = this;
+                    var url = this.formMode === 'new' 
+                        ? '${pageContext.request.contextPath}/managetables/api/create'
+                        : '${pageContext.request.contextPath}/managetables/api/' + this.formData.id;
                     
-                    if (this.formMode === 'new') {
-                        // Create new table
-                        var newTable = {
-                            id: this.tables.length + 1,
-                            tablePrefix: this.formData.tablePrefix,
-                            tableNo: this.formData.tableNo,
-                            description: this.formData.description,
-                            location: this.formData.location,
-                            capacity: parseInt(this.formData.capacity),
-                            images: this.formData.images.length > 0 ? this.formData.images : [],
-                            status: this.formData.status,
-                            createdDate: new Date().toISOString().split('T')[0]
-                        };
-                        this.tables.push(newTable);
-                        
-                        if (window.showSuccess) {
-                            window.showSuccess('Table added successfully', 3000);
-                        }
-                    } else {
-                        // Update existing table
-                        var index = this.tables.findIndex(function(t) { return t.id === self.formData.id; });
-                        if (index !== -1) {
-                            this.tables[index] = {
-                                ...this.tables[index],
-                                tableNo: this.formData.tableNo,
-                                description: this.formData.description,
-                                location: this.formData.location,
-                                capacity: parseInt(this.formData.capacity),
-                                images: this.formData.images.length > 0 ? this.formData.images : [],
-                                status: this.formData.status
-                            };
-                        }
-                        
-                        if (window.showSuccess) {
-                            window.showSuccess('Table updated successfully', 3000);
-                        }
-                    }
+                    var method = this.formMode === 'new' ? 'POST' : 'PUT';
                     
-                    this.closeTableFormModal();
+                    fetch(url, {
+                        method: method,
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(this.formData)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (window.showSuccess) {
+                                window.showSuccess(data.message, 3000);
+                            }
+                            self.closeTableFormModal();
+                            self.refreshData();
+                        } else {
+                            if (window.showError) {
+                                window.showError(data.message, 3000);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error saving table:', error);
+                        if (window.showError) {
+                            window.showError('Error saving table', 3000);
+                        }
+                    });
                 },
                 
                 // View table details
@@ -1337,22 +1310,31 @@
                 // Delete table
                 deleteTable: function() {
                     var self = this;
-                    var index = this.tables.findIndex(function(t) { return t.id === self.selectedTable.id; });
-                    if (index !== -1) {
-                        this.tables.splice(index, 1);
-                        
-                        if (window.showSuccess) {
-                            window.showSuccess('Table deleted successfully', 3000);
+                    
+                    fetch('${pageContext.request.contextPath}/managetables/api/' + this.selectedTable.id, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            if (window.showSuccess) {
+                                window.showSuccess(data.message, 3000);
+                            }
+                            self.showDeleteModal = false;
+                            self.selectedTable = null;
+                            self.refreshData();
+                        } else {
+                            if (window.showError) {
+                                window.showError(data.message, 3000);
+                            }
                         }
-                    }
-                    
-                    this.showDeleteModal = false;
-                    this.selectedTable = null;
-                    
-                    // Adjust current page if necessary
-                    if (this.paginatedTables.length === 0 && this.currentPage > 1) {
-                        this.currentPage--;
-                    }
+                    })
+                    .catch(error => {
+                        console.error('Error deleting table:', error);
+                        if (window.showError) {
+                            window.showError('Error deleting table', 3000);
+                        }
+                    });
                 },
                 
                 clearFilters: function() {
@@ -1361,6 +1343,7 @@
                     this.locationFilter = 'all';
                     this.capacityFilter = 'all';
                     this.currentPage = 1;
+                    this.refreshData();
                     
                     if (window.showInfo) {
                         window.showInfo('Filters cleared', 3000);
@@ -1369,10 +1352,6 @@
                 
                 applyFilters: function() {
                     this.currentPage = 1;
-                    
-                    if (window.showSuccess) {
-                        window.showSuccess('Filters applied', 3000);
-                    }
                 },
                 
                 prevPage: function() {
