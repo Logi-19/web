@@ -13,7 +13,7 @@
             <span class="font-semibold text-xl tracking-tight text-[#1e3c5c]">Ocean View <span class="text-[#0284a8]">Resort</span></span>
         </a>
         
-        <!-- desktop nav (center) - FIXED: Force desktop navigation to show -->
+        <!-- desktop nav (center) -->
         <nav class="flex items-center gap-6 text-sm font-medium text-[#1e3c5c] relative z-50">
             <a href="index.jsp" class="hover:text-[#0284a8] transition px-2 py-1 rounded-lg hover:bg-[#b5e5e0]/20 font-semibold whitespace-nowrap">Home</a>
             
@@ -57,7 +57,7 @@
             
             <a href="service.jsp" class="hover:text-[#0284a8] transition px-2 py-1 rounded-lg hover:bg-[#b5e5e0]/20 font-semibold whitespace-nowrap">Services</a>
             
-            <!-- Stories & Moments Dropdown (Gallery + Blogs) -->
+            <!-- Stories & Moments Dropdown -->
             <div class="relative group">
                 <button class="flex items-center gap-1 hover:text-[#0284a8] transition px-2 py-1 rounded-lg hover:bg-[#b5e5e0]/20 font-semibold whitespace-nowrap">
                     <span>📸 Stories & Moments</span>
@@ -90,7 +90,7 @@
             <a href="contact.jsp" class="hover:text-[#0284a8] transition px-2 py-1 rounded-lg hover:bg-[#b5e5e0]/20 font-semibold whitespace-nowrap">Contact</a>
         </nav>
         
-        <!-- User Menu (right side) - Changes based on login status -->
+        <!-- User Menu (right side) -->
         <div id="userMenu" class="relative">
             <!-- This will be populated by JavaScript -->
         </div>
@@ -100,7 +100,7 @@
 <div class="h-20"></div>
 
 <style>
-    /* Cover effect integration - subtle highlight on center nav items */
+    /* Cover effect integration */
     nav a, nav button {
         position: relative;
         overflow: hidden;
@@ -166,15 +166,13 @@
     
     nav {
         z-index: 10000 !important;
-        display: flex !important; /* Force flex display */
+        display: flex !important;
     }
     
-    /* Ensure dropdowns appear above everything */
     .group .absolute {
         z-index: 10001 !important;
     }
 
-    /* Better text visibility */
     nav a, nav button {
         color: #1e3c5c !important;
         font-weight: 600 !important;
@@ -184,7 +182,6 @@
         color: #0284a8 !important;
     }
 
-    /* FIX: Force desktop layout */
     @media (min-width: 768px) {
         nav {
             display: flex !important;
@@ -261,10 +258,8 @@
     }
 </style>
 
-<!-- FIX: Add viewport check and force desktop mode -->
 <script>
 (function() {
-    // Ensure navbar is in desktop mode on page load
     if (window.innerWidth >= 768) {
         const nav = document.querySelector('nav');
         if (nav) {
@@ -273,7 +268,6 @@
     }
 })();
 
-// Check if contextPath is already defined to avoid redeclaration error
 if (typeof window.contextPath === 'undefined') {
     window.contextPath = '${pageContext.request.contextPath}';
 }
@@ -283,18 +277,40 @@ function updateUserMenu() {
     const userMenu = document.getElementById('userMenu');
     if (!userMenu) return;
     
-    // Check if user is logged in
+    // Debug: Log all storage items using the unified keys from login.jsp
+    console.log('=== Storage Debug ===');
+    console.log('localStorage:', {
+        authToken: localStorage.getItem('authToken'),
+        userId: localStorage.getItem('userId'),
+        userName: localStorage.getItem('userName'),
+        userEmail: localStorage.getItem('userEmail'),
+        userRegNo: localStorage.getItem('userRegNo'),
+        userType: localStorage.getItem('userType')
+    });
+    console.log('sessionStorage:', {
+        authToken: sessionStorage.getItem('authToken'),
+        userId: sessionStorage.getItem('userId'),
+        userName: sessionStorage.getItem('userName'),
+        userEmail: sessionStorage.getItem('userEmail'),
+        userRegNo: sessionStorage.getItem('userRegNo'),
+        userType: sessionStorage.getItem('userType')
+    });
+    
+    // Check both localStorage and sessionStorage using unified keys
     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-    const guestName = localStorage.getItem('guestName') || sessionStorage.getItem('guestName');
-    const guestId = localStorage.getItem('guestId') || sessionStorage.getItem('guestId');
-    const guestEmail = localStorage.getItem('guestEmail') || sessionStorage.getItem('guestEmail');
+    let userName = localStorage.getItem('userName') || sessionStorage.getItem('userName');
+    const userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+    const userType = localStorage.getItem('userType') || sessionStorage.getItem('userType');
     
-    console.log('Updating user menu - Token:', token ? 'exists' : 'none');
-    console.log('Updating user menu - Guest Name:', guestName);
+    console.log('Token exists:', !!token);
+    console.log('User Name:', userName);
+    console.log('User ID:', userId);
+    console.log('User Type:', userType);
     
-    if (token && guestName) {
-        // User is logged in - show user menu
-        const firstName = guestName.split(' ')[0];
+    // Only show guest menu, not staff
+    if (token && userId && userType === 'guest') {
+        // Guest is logged in - show user menu
+        const firstName = userName ? userName.split(' ')[0] : 'Guest';
         userMenu.innerHTML = `
             <div class="relative" id="userMenuContainer">
                 <button onclick="toggleUserDropdown()" class="user-menu-button" id="userMenuBtn">
@@ -327,13 +343,12 @@ function updateUserMenu() {
             </div>
         `;
         
-        // Ensure dropdown is hidden initially
         const dropdown = document.getElementById('userDropdown');
         if (dropdown) {
             dropdown.classList.remove('show');
         }
     } else {
-        // User is not logged in - show login button
+        // Guest is not logged in - show login button
         userMenu.innerHTML = `
             <a href="login.jsp" class="bg-[#0284a8] hover:bg-[#03738C] text-white text-sm font-semibold px-5 py-2.5 rounded-full shadow-md transition flex items-center gap-1 whitespace-nowrap">
                 <span>🔑</span> Login
@@ -345,9 +360,8 @@ function updateUserMenu() {
 // Initialize when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
-        updateUserMenu();
+        setTimeout(updateUserMenu, 100);
         
-        // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
             const dropdown = document.getElementById('userDropdown');
             const button = document.getElementById('userMenuBtn');
@@ -358,10 +372,8 @@ if (document.readyState === 'loading') {
         });
     });
 } else {
-    // DOM already loaded, run immediately
-    updateUserMenu();
+    setTimeout(updateUserMenu, 100);
     
-    // Close dropdown when clicking outside
     document.addEventListener('click', function(event) {
         const dropdown = document.getElementById('userDropdown');
         const button = document.getElementById('userMenuBtn');
@@ -372,10 +384,10 @@ if (document.readyState === 'loading') {
     });
 }
 
-// Also run after a short delay to ensure everything is loaded
-setTimeout(updateUserMenu, 100);
+// Run multiple times to ensure it catches
+setTimeout(updateUserMenu, 500);
+setTimeout(updateUserMenu, 1000);
 
-// Toggle user dropdown
 function toggleUserDropdown() {
     const dropdown = document.getElementById('userDropdown');
     if (dropdown) {
@@ -383,13 +395,11 @@ function toggleUserDropdown() {
     }
 }
 
-// Handle logout
 function handleLogout() {
     const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
     
-    console.log('Logging out...');
+    console.log('Logging out guest...');
     
-    // Call logout API if token exists
     if (token) {
         fetch(window.contextPath + '/guests/api/logout', {
             method: 'POST',
@@ -398,43 +408,46 @@ function handleLogout() {
             }
         })
         .finally(() => {
-            // Clear all storage
+            // Clear all storage using unified keys
             localStorage.removeItem('authToken');
-            localStorage.removeItem('guestId');
-            localStorage.removeItem('guestName');
-            localStorage.removeItem('guestEmail');
-            localStorage.removeItem('guestRegNo');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('userRegNo');
+            localStorage.removeItem('userType');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userRoleId');
             
             sessionStorage.removeItem('authToken');
-            sessionStorage.removeItem('guestId');
-            sessionStorage.removeItem('guestName');
-            sessionStorage.removeItem('guestEmail');
-            sessionStorage.removeItem('guestRegNo');
+            sessionStorage.removeItem('userId');
+            sessionStorage.removeItem('userName');
+            sessionStorage.removeItem('userEmail');
+            sessionStorage.removeItem('userRegNo');
+            sessionStorage.removeItem('userType');
+            sessionStorage.removeItem('userRole');
+            sessionStorage.removeItem('userRoleId');
             
-            // Show success message if notification function exists
             if (window.showSuccess) {
                 window.showSuccess('Logged out successfully', 2000);
             }
             
-            // Update menu immediately without reload
             updateUserMenu();
             
-            // Optional: reload after a delay
             setTimeout(() => {
                 window.location.reload();
             }, 1500);
         });
     } else {
-        // Just clear storage and update
         localStorage.clear();
         sessionStorage.clear();
         updateUserMenu();
     }
 }
 
-// Add storage event listener to update across tabs
+// Listen for storage changes
 window.addEventListener('storage', function(e) {
-    if (e.key === 'authToken' || e.key === 'guestName') {
+    if (e.key === 'authToken' || e.key === 'userName' || e.key === 'userId' || e.key === 'userType') {
+        console.log('Storage changed:', e.key, e.newValue);
         updateUserMenu();
     }
 });

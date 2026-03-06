@@ -16,6 +16,7 @@ import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -25,6 +26,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 // Front Controller Pattern - Single entry point for all staff-related requests
 @WebServlet("/staff/*")
@@ -33,6 +36,26 @@ public class ManageStaffController extends HttpServlet {
     private ManageStaffService staffService;
     private RoleService roleService;
     private Gson gson;
+    
+    // Store active sessions for API authentication
+    private static final Map<String, LoginSession> activeSessions = new ConcurrentHashMap<>();
+    
+    // Inner class for login session
+    private static class LoginSession {
+        int staffId;
+        String staffName;
+        String regNo;
+        String role;
+        LocalDateTime loginTime;
+        
+        LoginSession(int staffId, String staffName, String regNo, String role) {
+            this.staffId = staffId;
+            this.staffName = staffName;
+            this.regNo = regNo;
+            this.role = role;
+            this.loginTime = LocalDateTime.now();
+        }
+    }
     
     @Override
     public void init() throws ServletException {
@@ -150,21 +173,37 @@ public class ManageStaffController extends HttpServlet {
                pathInfo.equals("/") || 
                pathInfo.equals("/list") ||
                pathInfo.equals("/managestaffs.jsp") ||
-               pathInfo.equals("/newstaff.jsp");
+               pathInfo.equals("/newstaff.jsp") ||
+               pathInfo.equals("/login.jsp");
     }
     
     // Handle page requests
     private void handlePageRequest(HttpServletRequest request, HttpServletResponse response, String pathInfo) 
             throws ServletException, IOException {
         if (pathInfo == null || pathInfo.equals("/") || pathInfo.equals("/managestaffs.jsp")) {
+            // Check if user is logged in via session
+            HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute("staffId") == null) {
+                response.sendRedirect(request.getContextPath() + "/staff/login.jsp");
+                return;
+            }
             // Show manage staff page
             request.getRequestDispatcher("/managestaffs.jsp").forward(request, response);
         } else if (pathInfo.equals("/newstaff.jsp")) {
+            // Check if user is logged in
+            HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute("staffId") == null) {
+                response.sendRedirect(request.getContextPath() + "/staff/login.jsp");
+                return;
+            }
             // Show new staff registration page
             // Get all roles for dropdown
             List<Role> roles = roleService.getAllRoles();
             request.setAttribute("roles", roles);
             request.getRequestDispatcher("/newstaff.jsp").forward(request, response);
+        } else if (pathInfo.equals("/login.jsp")) {
+            // Show login page
+            request.getRequestDispatcher("/login.jsp").forward(request, response);
         } else if (pathInfo.equals("/list")) {
             // Redirect to main page
             response.sendRedirect(request.getContextPath() + "/staff/");
@@ -178,6 +217,16 @@ public class ManageStaffController extends HttpServlet {
             throws IOException {
         response.setContentType("application/json");
         PrintWriter out = response.getWriter();
+        
+        // Check authentication for protected endpoints (except public ones)
+        if (!isPublicEndpoint(pathInfo)) {
+//            String token = extractToken(request);
+//            if (token == null || !activeSessions.containsKey(token)) {
+//                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//                out.print(gson.toJson(Map.of("error", "Unauthorized - Please login first")));
+//                return;
+//            }
+        }
         
         try {
             if (pathInfo == null) {
@@ -339,6 +388,14 @@ public class ManageStaffController extends HttpServlet {
         try {
             // Create new staff
             if (pathInfo.equals("/api/create")) {
+                // Check authentication for creating staff
+//                String token = extractToken(request);
+//                if (token == null || !activeSessions.containsKey(token)) {
+//                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//                    out.print(gson.toJson(Map.of("error", "Unauthorized - Please login first")));
+//                    return;
+//                }
+                
                 ManageStaff staff = extractStaffFromRequest(request);
                 ManageStaffService.ValidationResult result = staffService.createStaff(staff);
                 
@@ -347,12 +404,113 @@ public class ManageStaffController extends HttpServlet {
                 responseMap.put("message", result.getMessage());
                 
                 if (result.isValid()) {
+                    // Don't send password back
+                    staff.setPassword(null);
                     responseMap.put("staff", staff);
                 } else {
                     response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
                 }
                 
                 out.print(gson.toJson(responseMap));
+                
+            // Authenticate staff - Returns token for future use
+            } else if (pathInfo.equals("/api/login")) {
+                JsonObject json = parseJsonRequest(request);
+                String username = json.has("username") ? json.get("username").getAsString() : null;
+                String password = json.has("password") ? json.get("password").getAsString() : null;
+                
+                if (username != null && password != null) {
+                    ManageStaff staff = staffService.authenticate(username, password);
+                    
+                    if (staff != null) {
+                        // Update last login
+                        staffService.updateLastLogin(staff.getId());
+                        
+                        // Also set in HTTP session
+                        HttpSession session = request.getSession(true);
+                        session.setAttribute("staffId", staff.getId());
+                        session.setAttribute("staffName", staff.getFullname());
+                        session.setAttribute("staffRegNo", staff.getRegNo());
+                        
+                        // Get role name
+                        Role role = roleService.getRoleById(staff.getRoleId());
+                        String roleName = role != null ? role.getName() : "Staff";
+                        session.setAttribute("staffRole", roleName);
+                        
+                        // Generate token for API session management
+                        String token = UUID.randomUUID().toString();
+                        activeSessions.put(token, new LoginSession(
+                            staff.getId(), 
+                            staff.getFullname(), 
+                            staff.getRegNo(),
+                            roleName
+                        ));
+                        
+                        // Return success with token and user info
+                        Map<String, Object> responseMap = new HashMap<>();
+                        responseMap.put("success", true);
+                        responseMap.put("message", "Login successful");
+                        responseMap.put("token", token); // Token for future session management
+                        responseMap.put("staffId", staff.getId());
+                        responseMap.put("staffName", staff.getFullname());
+                        responseMap.put("staffRegNo", staff.getRegNo());
+                        responseMap.put("staffEmail", staff.getEmail());
+                        responseMap.put("staffRole", roleName);
+                        responseMap.put("staffRoleId", staff.getRoleId());
+                        
+                        out.print(gson.toJson(responseMap));
+                    } else {
+                        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        out.print(gson.toJson(Map.of(
+                            "success", false,
+                            "message", "Invalid username or password or account is inactive"
+                        )));
+                    }
+                } else {
+                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    out.print(gson.toJson(Map.of(
+                        "success", false,
+                        "message", "Username and password are required"
+                    )));
+                }
+                
+            // Logout - Invalidates token
+            } else if (pathInfo.equals("/api/logout")) {
+                String token = extractToken(request);
+                if (token != null) {
+                    activeSessions.remove(token);
+                }
+                
+                // Invalidate HTTP session
+                HttpSession session = request.getSession(false);
+                if (session != null) {
+                    session.invalidate();
+                }
+                
+                out.print(gson.toJson(Map.of(
+                    "success", true,
+                    "message", "Logout successful"
+                )));
+                
+            // Verify token - Check if token is still valid
+            } else if (pathInfo.equals("/api/verify-token")) {
+                String token = extractToken(request);
+                if (token != null && activeSessions.containsKey(token)) {
+                    LoginSession session = activeSessions.get(token);
+                    out.print(gson.toJson(Map.of(
+                        "success", true,
+                        "valid", true,
+                        "staffId", session.staffId,
+                        "staffName", session.staffName,
+                        "staffRegNo", session.regNo,
+                        "staffRole", session.role
+                    )));
+                } else {
+                    out.print(gson.toJson(Map.of(
+                        "success", true,
+                        "valid", false
+                    )));
+                }
                 
             } else {
                 response.setStatus(HttpServletResponse.SC_NOT_FOUND);
@@ -371,6 +529,14 @@ public class ManageStaffController extends HttpServlet {
             throws IOException {
         response.setContentType("application/json");
         PrintWriter out = response.getWriter();
+        
+        // Check authentication for protected endpoints
+//        String token = extractToken(request);
+//        if (token == null || !activeSessions.containsKey(token)) {
+//            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//            out.print(gson.toJson(Map.of("error", "Unauthorized - Please login first")));
+//            return;
+//        }
         
         try {
             if (pathInfo.matches("/api/\\d+")) {
@@ -455,6 +621,14 @@ public class ManageStaffController extends HttpServlet {
         response.setContentType("application/json");
         PrintWriter out = response.getWriter();
         
+        // Check authentication for protected endpoints
+//        String token = extractToken(request);
+//        if (token == null || !activeSessions.containsKey(token)) {
+//            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+//            out.print(gson.toJson(Map.of("error", "Unauthorized - Please login first")));
+//            return;
+//        }
+        
         try {
             // Delete staff by ID
             if (pathInfo.matches("/api/\\d+")) {
@@ -476,6 +650,41 @@ public class ManageStaffController extends HttpServlet {
             out.print(gson.toJson(Map.of("error", e.getMessage())));
             e.printStackTrace();
         }
+    }
+    
+    // Helper method to check if endpoint is public (no authentication required)
+    private boolean isPublicEndpoint(String pathInfo) {
+        return pathInfo != null && (
+            pathInfo.equals("/api/login") ||
+            pathInfo.equals("/api/logout") ||
+            pathInfo.equals("/api/verify-token") ||
+            pathInfo.equals("/api/check-username") ||
+            pathInfo.equals("/api/check-email") ||
+            pathInfo.equals("/api/check-phone")
+        );
+    }
+    
+    // Helper method to extract token from request
+    private String extractToken(HttpServletRequest request) {
+        // Check Authorization header first
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
+        }
+        
+        // Then check query parameter
+        String token = request.getParameter("token");
+        if (token != null && !token.isEmpty()) {
+            return token;
+        }
+        
+        // Then check session
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            return (String) session.getAttribute("apiToken");
+        }
+        
+        return null;
     }
     
     // Helper method to extract ID from path

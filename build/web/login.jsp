@@ -66,6 +66,38 @@
             opacity: 0.7;
             cursor: not-allowed;
         }
+        
+        /* User type toggle */
+        .user-type-toggle {
+            display: flex;
+            background: #f0f4f8;
+            border-radius: 50px;
+            padding: 4px;
+            margin-bottom: 20px;
+        }
+        .user-type-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            border: none;
+            background: transparent;
+            color: #4a5568;
+        }
+        .user-type-btn.active {
+            background: #0284a8;
+            color: white;
+            box-shadow: 0 4px 10px rgba(2, 132, 168, 0.3);
+        }
+        .user-type-btn.guest.active {
+            background: #0284a8;
+        }
+        .user-type-btn.staff.active {
+            background: #6b46c1;
+        }
     </style>
 </head>
 <body class="login-bg">
@@ -87,6 +119,16 @@
                 </div>
                 <h2 class="text-3xl md:text-4xl font-bold text-[#1e3c5c]">Welcome Back</h2>
                 <p class="text-[#3a5a78] text-base mt-2">Sign in to continue to Ocean View Resort</p>
+            </div>
+
+            <!-- User Type Toggle -->
+            <div class="user-type-toggle mb-6">
+                <button type="button" id="guestTypeBtn" class="user-type-btn guest active" onclick="setUserType('guest')">
+                    👤 Guest
+                </button>
+                <button type="button" id="staffTypeBtn" class="user-type-btn staff" onclick="setUserType('staff')">
+                    👔 Staff
+                </button>
             </div>
 
             <form id="loginForm" method="post" class="space-y-5" onsubmit="return handleLogin(event)">
@@ -132,13 +174,20 @@
                     <span id="btn-text">Sign In</span>
                 </button>
 
-                <!-- register link -->
-                <div class="text-center pt-3">
+                <!-- register link (only for guests) -->
+                <div id="guestRegisterLink" class="text-center pt-3">
                     <p class="text-[#3a5a78] text-sm">
                         Don't have an account? 
                         <a href="register.jsp" class="text-[#0284a8] font-semibold hover:text-[#03738C] hover:underline transition">
                             Create account
                         </a>
+                    </p>
+                </div>
+                
+                <!-- staff note (only for staff) -->
+                <div id="staffNote" class="text-center pt-3 hidden">
+                    <p class="text-[#3a5a78] text-sm">
+                        Staff access only. Contact administrator if you need access.
                     </p>
                 </div>
             </form>
@@ -167,12 +216,21 @@
 
     <!-- Login handling script -->
     <script>
+        // Current user type (guest or staff)
+        let currentUserType = 'guest';
+        
         // Check if user is already logged in (has token)
         (function checkExistingLogin() {
             const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-            if (token) {
-                // Verify token with server
-                fetch('${pageContext.request.contextPath}/guests/api/verify-token', {
+            const userType = localStorage.getItem('userType') || sessionStorage.getItem('userType');
+            
+            if (token && userType) {
+                // Verify token with appropriate endpoint
+                const verifyEndpoint = userType === 'staff' 
+                    ? '${pageContext.request.contextPath}/staff/api/verify-token'
+                    : '${pageContext.request.contextPath}/guests/api/verify-token';
+                
+                fetch(verifyEndpoint, {
                     headers: {
                         'Authorization': 'Bearer ' + token
                     }
@@ -180,37 +238,71 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.valid) {
-                        // Token is valid, redirect to home
-                        window.location.href = 'index.jsp';
+                        // Token is valid, redirect to appropriate page
+                        if (userType === 'staff') {
+                            window.location.href = '${pageContext.request.contextPath}/admin/dashboard.jsp';
+                        } else {
+                            window.location.href = '${pageContext.request.contextPath}/index.jsp';
+                        }
                     } else {
                         // Token invalid, clear storage
-                        localStorage.removeItem('authToken');
-                        localStorage.removeItem('guestId');
-                        localStorage.removeItem('guestName');
-                        localStorage.removeItem('guestEmail');
-                        localStorage.removeItem('guestRegNo');
-                        sessionStorage.removeItem('authToken');
-                        sessionStorage.removeItem('guestId');
-                        sessionStorage.removeItem('guestName');
-                        sessionStorage.removeItem('guestEmail');
-                        sessionStorage.removeItem('guestRegNo');
+                        clearAuthStorage();
                     }
                 })
                 .catch(() => {
                     // Error verifying token, clear storage
-                    localStorage.removeItem('authToken');
-                    localStorage.removeItem('guestId');
-                    localStorage.removeItem('guestName');
-                    localStorage.removeItem('guestEmail');
-                    localStorage.removeItem('guestRegNo');
-                    sessionStorage.removeItem('authToken');
-                    sessionStorage.removeItem('guestId');
-                    sessionStorage.removeItem('guestName');
-                    sessionStorage.removeItem('guestEmail');
-                    sessionStorage.removeItem('guestRegNo');
+                    clearAuthStorage();
                 });
             }
         })();
+        
+        function clearAuthStorage() {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('userId');
+            localStorage.removeItem('userName');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('userRegNo');
+            localStorage.removeItem('userType');
+            localStorage.removeItem('userRole');
+            localStorage.removeItem('userRoleId');
+            
+            sessionStorage.removeItem('authToken');
+            sessionStorage.removeItem('userId');
+            sessionStorage.removeItem('userName');
+            sessionStorage.removeItem('userEmail');
+            sessionStorage.removeItem('userRegNo');
+            sessionStorage.removeItem('userType');
+            sessionStorage.removeItem('userRole');
+            sessionStorage.removeItem('userRoleId');
+        }
+
+        function setUserType(type) {
+            currentUserType = type;
+            
+            // Update button styles
+            const guestBtn = document.getElementById('guestTypeBtn');
+            const staffBtn = document.getElementById('staffTypeBtn');
+            const guestLink = document.getElementById('guestRegisterLink');
+            const staffNote = document.getElementById('staffNote');
+            
+            if (type === 'guest') {
+                guestBtn.classList.add('active');
+                staffBtn.classList.remove('active');
+                guestLink.classList.remove('hidden');
+                staffNote.classList.add('hidden');
+                
+                // Update login button gradient
+                document.getElementById('loginBtn').className = 'w-full bg-gradient-to-r from-[#0284a8] to-[#03738C] hover:from-[#03738C] hover:to-[#025c73] text-white font-semibold py-3.5 px-6 rounded-xl text-base transition-all transform hover:scale-[1.01] shadow-lg flex items-center justify-center gap-2';
+            } else {
+                guestBtn.classList.remove('active');
+                staffBtn.classList.add('active');
+                guestLink.classList.add('hidden');
+                staffNote.classList.remove('hidden');
+                
+                // Update login button gradient for staff
+                document.getElementById('loginBtn').className = 'w-full bg-gradient-to-r from-[#6b46c1] to-[#553c9a] hover:from-[#553c9a] hover:to-[#44337a] text-white font-semibold py-3.5 px-6 rounded-xl text-base transition-all transform hover:scale-[1.01] shadow-lg flex items-center justify-center gap-2';
+            }
+        }
 
         function togglePasswordVisibility(fieldId) {
             const field = document.getElementById(fieldId);
@@ -267,8 +359,13 @@
                 password: password
             };
             
+            // Determine login endpoint based on user type
+            const loginEndpoint = currentUserType === 'staff' 
+                ? '${pageContext.request.contextPath}/staff/api/login'
+                : '${pageContext.request.contextPath}/guests/api/login';
+            
             // Make API call to login
-            fetch('${pageContext.request.contextPath}/guests/api/login', {
+            fetch(loginEndpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -293,24 +390,38 @@
                 setLoading(false);
                 
                 if (data.success) {
-                    // Store token and user info
+                    // Store token and user info (using generic keys for both user types)
                     if (data.token) {
+                        // Common keys for both guest and staff
+                        const userId = data.staffId || data.guestId;
+                        const userName = data.staffName || data.guestName;
+                        const userEmail = data.staffEmail || data.guestEmail;
+                        const userRegNo = data.staffRegNo || data.guestRegNo;
+                        const userRole = data.staffRole || null;
+                        const userRoleId = data.staffRoleId || null;
+                        
                         // Store in localStorage for persistence across sessions
                         localStorage.setItem('authToken', data.token);
-                        localStorage.setItem('guestId', data.guestId);
-                        localStorage.setItem('guestName', data.guestName);
-                        localStorage.setItem('guestEmail', data.guestEmail);
-                        localStorage.setItem('guestRegNo', data.guestRegNo);
+                        localStorage.setItem('userId', userId);
+                        localStorage.setItem('userName', userName);
+                        localStorage.setItem('userEmail', userEmail);
+                        localStorage.setItem('userRegNo', userRegNo);
+                        localStorage.setItem('userType', currentUserType);
+                        if (userRole) localStorage.setItem('userRole', userRole);
+                        if (userRoleId) localStorage.setItem('userRoleId', userRoleId);
                         
                         // Also store in sessionStorage for current session
                         sessionStorage.setItem('authToken', data.token);
-                        sessionStorage.setItem('guestId', data.guestId);
-                        sessionStorage.setItem('guestName', data.guestName);
-                        sessionStorage.setItem('guestEmail', data.guestEmail);
-                        sessionStorage.setItem('guestRegNo', data.guestRegNo);
+                        sessionStorage.setItem('userId', userId);
+                        sessionStorage.setItem('userName', userName);
+                        sessionStorage.setItem('userEmail', userEmail);
+                        sessionStorage.setItem('userRegNo', userRegNo);
+                        sessionStorage.setItem('userType', currentUserType);
+                        if (userRole) sessionStorage.setItem('userRole', userRole);
+                        if (userRoleId) sessionStorage.setItem('userRoleId', userRoleId);
                     }
                     
-                    showSuccess('Login successful! Welcome back, ' + (data.guestName || username.split('@')[0]) + '!');
+                    showSuccess('Login successful! Welcome back, ' + (data.staffName || data.guestName || username.split('@')[0]) + '!');
                     
                     // Clear form
                     document.getElementById('loginForm').reset();
@@ -318,9 +429,13 @@
                     // Reset eye icon
                     document.getElementById('password-eye').textContent = '👁️';
                     
-                    // Redirect to index.jsp after 1.5 seconds
+                    // Redirect based on user type
                     setTimeout(() => {
-                        window.location.href = 'index.jsp';
+                        if (currentUserType === 'staff') {
+                            window.location.href = '${pageContext.request.contextPath}/admin/dashboard.jsp';
+                        } else {
+                            window.location.href = '${pageContext.request.contextPath}/index.jsp';
+                        }
                     }, 1500);
                 } else {
                     showError(data.message || 'Login failed. Please try again.');
@@ -353,6 +468,15 @@
                 }
                 sessionStorage.removeItem('registrationSuccess');
                 sessionStorage.removeItem('registeredEmail');
+            }
+            
+            // Check URL parameters for user type
+            const urlParams = new URLSearchParams(window.location.search);
+            const type = urlParams.get('type');
+            if (type === 'staff') {
+                setUserType('staff');
+            } else {
+                setUserType('guest');
             }
         });
     </script>
