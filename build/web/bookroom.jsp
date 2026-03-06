@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Flatpickr for date picker -->
+    <!-- Flatpickr for date and time picker -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
@@ -686,6 +686,16 @@
             box-shadow: 0 0 0 4px rgba(2, 132, 168, 0.1);
         }
         
+        .booking-input.unavailable {
+            border-color: #ef4444;
+            background-color: #fee2e2;
+        }
+        
+        .booking-input.available {
+            border-color: #10b981;
+            background-color: #f0fdf4;
+        }
+        
         .time-select {
             width: 100%;
             padding: 0.75rem 1rem;
@@ -715,9 +725,15 @@
             flex: 1;
         }
         
-        .confirm-btn:hover {
+        .confirm-btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+        }
+        
+        .confirm-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: linear-gradient(135deg, #94a3b8, #64748b);
         }
         
         .cancel-btn {
@@ -736,6 +752,96 @@
             background: #f1f5f9;
             border-color: #94a3b8;
         }
+        
+        .availability-warning {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #b91c1c;
+            padding: 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .availability-warning i {
+            color: #ef4444;
+        }
+        
+        .time-picker-container {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .time-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 1rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+            background: white;
+            cursor: pointer;
+        }
+        
+        .time-input:focus {
+            outline: none;
+            border-color: #0284a8;
+            box-shadow: 0 0 0 4px rgba(2, 132, 168, 0.1);
+        }
+
+        /* Unavailable date style for flatpickr */
+        .flatpickr-day.unavailable {
+            background-color: #fee2e2 !important;
+            color: #ef4444 !important;
+            text-decoration: line-through;
+            cursor: not-allowed;
+            border-color: #ef4444 !important;
+        }
+        
+        .flatpickr-day.unavailable:hover {
+            background-color: #fecaca !important;
+        }
+        
+        /* Ensure flatpickr calendar is on top of everything */
+        .flatpickr-calendar {
+            z-index: 999999 !important;
+            pointer-events: auto !important;
+        }
+
+        /* Partially booked badge */
+        .partial-badge {
+            position: absolute;
+            top: 60px;
+            left: 15px;
+            background: #fbbf24;
+            color: #92400e;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            z-index: 2;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Maintenance badge */
+        .maintenance-badge {
+            position: absolute;
+            top: 60px;
+            left: 15px;
+            background: #ef4444;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            z-index: 2;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="bg-[#f0f7fa] text-[#1e3c5c] antialiased" x-data="roomBooking()" x-init="init()">
@@ -749,7 +855,7 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
         
         <!-- User Welcome Bar (shown when logged in) -->
-        <div x-show="isLoggedIn" class="user-welcome">
+        <div x-show="isLoggedIn" class="user-welcome" x-cloak>
             <div class="user-info">
                 <div class="user-avatar">
                     <i class="fas fa-user-circle"></i>
@@ -880,7 +986,7 @@
             <!-- No Rooms Found -->
             <template x-if="!loading && filteredRooms.length === 0">
                 <div class="col-span-full">
-                    <div class="no-rooms">
+                    <div class="text-center py-16">
                         <span class="text-7xl mb-6 block">🏖️</span>
                         <h3 class="text-3xl font-bold text-[#1e3c5c] mb-3">No Rooms Available</h3>
                         <p class="text-[#3a5a78] mb-6 text-lg">Try adjusting your filters to find the perfect room for your stay.</p>
@@ -908,7 +1014,19 @@
                             <!-- Room Number Badge -->
                             <div class="room-badge">
                                 <i class="fas fa-door-open"></i>
-                                <span x-text="'Room ' + room.roomNo"></span>
+                                <span x-text="'Room ' + (room.roomNo || room.room_no || 'N/A')"></span>
+                            </div>
+                            
+                            <!-- Partially Booked Badge (show if room has any confirmed bookings) -->
+                            <div class="partial-badge" x-show="room.hasActiveBookings">
+                                <i class="fas fa-calendar-alt mr-1"></i>
+                                <span>Partially Booked</span>
+                            </div>
+                            
+                            <!-- Maintenance Badge -->
+                            <div class="maintenance-badge" x-show="room.status === 'maintenance'">
+                                <i class="fas fa-tools mr-1"></i>
+                                <span>Maintenance</span>
                             </div>
                             
                             <!-- Image Counter -->
@@ -946,18 +1064,18 @@
                             <div class="room-title">
                                 <div class="room-number">
                                     <i class="fas fa-hashtag"></i>
-                                    <span x-text="room.roomNo"></span>
+                                    <span x-text="room.roomNo || room.room_no || 'N/A'"></span>
                                 </div>
                                 <span class="type-badge-enhanced"
                                       :class="{
-                                          'standard': room.typeName === 'Standard',
-                                          'deluxe': room.typeName === 'Deluxe',
-                                          'suite': room.typeName === 'Suite',
-                                          'executive': room.typeName === 'Executive',
-                                          'presidential': room.typeName === 'Presidential'
+                                          'standard': (room.typeName || '').toLowerCase() === 'standard',
+                                          'deluxe': (room.typeName || '').toLowerCase() === 'deluxe',
+                                          'suite': (room.typeName || '').toLowerCase() === 'suite',
+                                          'executive': (room.typeName || '').toLowerCase() === 'executive',
+                                          'presidential': (room.typeName || '').toLowerCase() === 'presidential'
                                       }">
                                     <i class="fas fa-star mr-1"></i>
-                                    <span x-text="room.typeName || 'Standard'"></span>
+                                    <span x-text="room.typeName || room.room_type_name || 'Standard'"></span>
                                 </span>
                             </div>
 
@@ -995,15 +1113,15 @@
                                 <div class="price-info">
                                     <span class="price-label">Starting from</span>
                                     <div class="price-value">
-                                        $<span x-text="room.price || '0'"></span>
+                                        $<span x-text="room.price || room.rate || '0'"></span>
                                         <small>/night</small>
                                     </div>
                                 </div>
                                 <button @click="openBookingModal(room)" 
                                         class="book-now-btn-enhanced"
-                                        :class="{ 'disabled': !isLoggedIn }">
-                                    <span x-text="isLoggedIn ? 'Book Now' : 'Login to Book'"></span>
-                                    <i class="fas" :class="isLoggedIn ? 'fa-arrow-right' : 'fa-lock'"></i>
+                                        :class="{ 'disabled': !isLoggedIn || room.status === 'maintenance' }">
+                                    <span x-text="room.status === 'maintenance' ? 'Maintenance' : (!isLoggedIn ? 'Login to Book' : 'Book Now')"></span>
+                                    <i class="fas" :class="room.status === 'maintenance' ? 'fa-tools' : (isLoggedIn ? 'fa-arrow-right' : 'fa-lock')"></i>
                                 </button>
                             </div>
                         </div>
@@ -1013,7 +1131,7 @@
         </div>
 
         <!-- Enhanced Pagination -->
-        <div x-show="!loading && filteredRooms.length > 0" class="flex flex-col items-center mt-12">
+        <div x-show="!loading && filteredRooms.length > 0" class="flex flex-col items-center mt-12" x-cloak>
             <div class="text-sm text-[#3a5a78] mb-4">
                 <i class="fas fa-door-open mr-2"></i>
                 <span x-text="'Showing ' + (((currentPage - 1) * itemsPerPage) + 1) + ' - ' + Math.min(currentPage * itemsPerPage, filteredRooms.length) + ' of ' + filteredRooms.length + ' rooms'"></span>
@@ -1056,7 +1174,7 @@
                                  alt="Selected Room">
                             <span class="absolute top-2 left-2 bg-[#0284a8] text-white px-3 py-1 rounded-full text-xs font-semibold">
                                 <i class="fas fa-door-open mr-1"></i>
-                                <span x-text="'Room ' + selectedRoom?.roomNo"></span>
+                                <span x-text="'Room ' + (selectedRoom?.roomNo || selectedRoom?.room_no || 'N/A')"></span>
                             </span>
                         </div>
                         
@@ -1064,29 +1182,29 @@
                         <div class="bg-[#f8fafc] p-4 rounded-xl">
                             <div class="flex justify-between items-start mb-3">
                                 <div>
-                                    <h3 class="text-xl font-bold text-[#1e3c5c]" x-text="selectedRoom?.roomNo"></h3>
+                                    <h3 class="text-xl font-bold text-[#1e3c5c]" x-text="selectedRoom?.roomNo || selectedRoom?.room_no || 'N/A'"></h3>
                                     <p class="text-sm text-[#3a5a78]" x-text="selectedRoom?.description || 'No description available'"></p>
                                 </div>
                                 <span class="type-badge-enhanced"
                                       :class="{
-                                          'standard': selectedRoom?.typeName === 'Standard',
-                                          'deluxe': selectedRoom?.typeName === 'Deluxe',
-                                          'suite': selectedRoom?.typeName === 'Suite',
-                                          'executive': selectedRoom?.typeName === 'Executive',
-                                          'presidential': selectedRoom?.typeName === 'Presidential'
+                                          'standard': (selectedRoom?.typeName || '').toLowerCase() === 'standard',
+                                          'deluxe': (selectedRoom?.typeName || '').toLowerCase() === 'deluxe',
+                                          'suite': (selectedRoom?.typeName || '').toLowerCase() === 'suite',
+                                          'executive': (selectedRoom?.typeName || '').toLowerCase() === 'executive',
+                                          'presidential': (selectedRoom?.typeName || '').toLowerCase() === 'presidential'
                                       }">
-                                    <span x-text="selectedRoom?.typeName || 'Standard'"></span>
+                                    <span x-text="selectedRoom?.typeName || selectedRoom?.room_type_name || 'Standard'"></span>
                                 </span>
                             </div>
                             
                             <div class="grid grid-cols-2 gap-3 mt-3">
                                 <div class="flex items-center gap-2 text-sm">
                                     <i class="fas fa-users text-[#0284a8]"></i>
-                                    <span x-text="'Capacity: ' + selectedRoom?.capacity + ' ' + (selectedRoom?.capacity === 1 ? 'person' : 'persons')"></span>
+                                    <span x-text="'Capacity: ' + (selectedRoom?.capacity || '0') + ' ' + ((selectedRoom?.capacity || 0) === 1 ? 'person' : 'persons')"></span>
                                 </div>
                                 <div class="flex items-center gap-2 text-sm">
                                     <i class="fas fa-tag text-[#0284a8]"></i>
-                                    <span x-text="'$' + selectedRoom?.price + '/night'"></span>
+                                    <span x-text="'$' + (selectedRoom?.price || selectedRoom?.rate || '0') + '/night'"></span>
                                 </div>
                             </div>
                             
@@ -1128,6 +1246,10 @@
                                            x-model="bookingDetails.checkIn"
                                            placeholder="Check-in"
                                            class="booking-input"
+                                           :class="{
+                                               'unavailable': bookingDetails.checkIn && bookingDetails.checkOut && !bookingDetails.isAvailable,
+                                               'available': bookingDetails.checkIn && bookingDetails.checkOut && bookingDetails.isAvailable
+                                           }"
                                            readonly>
                                 </div>
                                 <div>
@@ -1136,6 +1258,10 @@
                                            x-model="bookingDetails.checkOut"
                                            placeholder="Check-out"
                                            class="booking-input"
+                                           :class="{
+                                               'unavailable': bookingDetails.checkIn && bookingDetails.checkOut && !bookingDetails.isAvailable,
+                                               'available': bookingDetails.checkIn && bookingDetails.checkOut && bookingDetails.isAvailable
+                                           }"
                                            readonly>
                                 </div>
                             </div>
@@ -1143,24 +1269,27 @@
                                 <i class="far fa-clock mr-1"></i>
                                 <span x-text="bookingDetails.nights + ' night' + (bookingDetails.nights !== 1 ? 's' : '')"></span>
                             </p>
+                            
+                            <!-- Availability Warning -->
+                            <div x-show="!bookingDetails.isAvailable && bookingDetails.checkIn && bookingDetails.checkOut" 
+                                 class="availability-warning mt-2">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>This room is not available for the selected dates. Please choose different dates.</span>
+                            </div>
                         </div>
                         
-                        <!-- Arrival Time -->
+                        <!-- Check-in Time with Time Picker -->
                         <div>
                             <label class="block text-sm font-semibold text-[#1e3c5c] mb-2">
-                                <i class="fas fa-clock mr-2 text-[#d4a373]"></i>Arrival Time
+                                <i class="fas fa-clock mr-2 text-[#d4a373]"></i>Check-in Time
                             </label>
-                            <select x-model="bookingDetails.arrivalTime" class="time-select">
-                                <option value="14:00">14:00 (2:00 PM)</option>
-                                <option value="15:00">15:00 (3:00 PM)</option>
-                                <option value="16:00">16:00 (4:00 PM)</option>
-                                <option value="17:00">17:00 (5:00 PM)</option>
-                                <option value="18:00">18:00 (6:00 PM)</option>
-                                <option value="19:00">19:00 (7:00 PM)</option>
-                                <option value="20:00">20:00 (8:00 PM)</option>
-                                <option value="21:00">21:00 (9:00 PM)</option>
-                                <option value="22:00">22:00 (10:00 PM)</option>
-                            </select>
+                            <div class="time-picker-container">
+                                <input type="text" 
+                                       x-ref="checkInTime"
+                                       x-model="bookingDetails.checkInTime"
+                                       placeholder="Select time"
+                                       class="time-input">
+                            </div>
                         </div>
                         
                         <!-- Special Requests -->
@@ -1178,7 +1307,7 @@
                         <div class="total-price">
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm text-[#3a5a78]">Price per night:</span>
-                                <span class="font-semibold">$<span x-text="selectedRoom?.price || '0'"></span></span>
+                                <span class="font-semibold">$<span x-text="selectedRoom?.price || selectedRoom?.rate || '0'"></span></span>
                             </div>
                             <div class="flex justify-between items-center mb-2">
                                 <span class="text-sm text-[#3a5a78]">Number of nights:</span>
@@ -1199,16 +1328,19 @@
                             <button @click="closeBookingModal()" class="cancel-btn">
                                 <i class="fas fa-times mr-2"></i>Cancel
                             </button>
-                            <button @click="confirmBooking()" class="confirm-btn">
-                                <i class="fas fa-check-circle mr-2"></i>Confirm Booking
+                            <button @click="confirmBooking()" 
+                                    class="confirm-btn"
+                                    :disabled="!bookingDetails.isAvailable || !bookingDetails.checkIn || !bookingDetails.checkOut || !bookingDetails.checkInTime || bookingDetails.checkingAvailability || selectedRoom?.status === 'maintenance'">
+                                <i class="fas" :class="bookingDetails.checkingAvailability ? 'fa-spinner fa-spin' : 'fa-check-circle'"></i>
+                                <span x-text="bookingDetails.checkingAvailability ? 'Checking...' : 'Confirm Booking'"></span>
                             </button>
                         </div>
                         
-                        <!-- Test Mode Notice -->
-                        <div class="text-center mt-4">
-                            <span class="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 text-xs px-3 py-1.5 rounded-full">
-                                <i class="fas fa-flask"></i>
-                                Test Mode - Frontend Demo Only
+                        <!-- Maintenance Notice -->
+                        <div x-show="selectedRoom?.status === 'maintenance'" class="text-center mt-2">
+                            <span class="inline-flex items-center gap-2 bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded-full">
+                                <i class="fas fa-tools"></i>
+                                This room is under maintenance and cannot be booked
                             </span>
                         </div>
                     </div>
@@ -1221,360 +1353,643 @@
     <jsp:include page="component/footer.jsp" />
 
     <script>
-        function roomBooking() {
-            return {
-                // User data from login
-                isLoggedIn: false,
-                userId: null,
-                userName: '',
-                userEmail: '',
-                userRegNo: '',
-                userType: '',
-                authToken: '',
-                
-                // Data properties
-                rooms: [],
-                filteredRooms: [],
-                roomTypes: [],
-                loading: true,
-                
-                // Filters
-                filters: {
-                    typeId: 'all',
-                    minPrice: '',
-                    maxPrice: '',
-                    capacity: 'all',
-                    sortBy: 'recommended'
-                },
-                
-                // Pagination
-                currentPage: 1,
-                itemsPerPage: 6,
-                
-                // Modal
-                showBookingModal: false,
-                selectedRoom: null,
-                
-                // Booking Details
-                bookingDetails: {
-                    checkIn: '',
-                    checkOut: '',
-                    nights: 1,
-                    arrivalTime: '14:00',
-                    specialRequests: '',
-                    totalPrice: 0
-                },
-                
-                init() {
-                    // Load user data from storage
-                    this.loadUserData();
+function roomBooking() {
+    return {
+        // User data from login
+        isLoggedIn: false,
+        userId: null,
+        userName: '',
+        userEmail: '',
+        userRegNo: '',
+        userType: '',
+        
+        // Data properties
+        rooms: [],
+        filteredRooms: [],
+        roomTypes: [],
+        loading: true,
+        unavailableDates: [], // Store unavailable dates for the selected room
+        
+        // Filters
+        filters: {
+            typeId: 'all',
+            minPrice: '',
+            maxPrice: '',
+            capacity: 'all',
+            sortBy: 'recommended'
+        },
+        
+        // Pagination
+        currentPage: 1,
+        itemsPerPage: 6,
+        
+        // Modal
+        showBookingModal: false,
+        selectedRoom: null,
+        datePickersInitialized: false,
+        flatpickrInstances: {
+            checkIn: null,
+            checkOut: null,
+            checkInTime: null
+        },
+        
+        // Booking Details
+        bookingDetails: {
+            checkIn: '',
+            checkOut: '',
+            nights: 1,
+            checkInTime: '',
+            specialRequests: '',
+            totalPrice: 0,
+            isAvailable: true,
+            checkingAvailability: false
+        },
+        
+        init() {
+            // Load user data from storage
+            this.loadUserData();
+            
+            this.loadRoomTypes();
+            this.loadRooms();
+            
+            // Reset to first page when filters change
+            this.$watch('filteredRooms', () => {
+                this.currentPage = 1;
+            });
+        },
+        
+        loadUserData() {
+            // Check localStorage first (persistent login)
+            this.userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+            this.userName = localStorage.getItem('userName') || sessionStorage.getItem('userName');
+            this.userEmail = localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail');
+            this.userRegNo = localStorage.getItem('userRegNo') || sessionStorage.getItem('userRegNo');
+            this.userType = localStorage.getItem('userType') || sessionStorage.getItem('userType');
+            
+            this.isLoggedIn = !!(this.userId);
+            
+            if (this.isLoggedIn) {
+                console.log('User logged in:', this.userName, 'Type:', this.userType);
+            }
+        },
+        
+        loadRoomTypes() {
+            fetch('${pageContext.request.contextPath}/roomtypes/api/list')
+                .then(response => response.json())
+                .then(data => {
+                    this.roomTypes = Array.isArray(data) ? data : [];
+                })
+                .catch(error => {
+                    console.error('Error loading room types:', error);
+                    this.roomTypes = [];
+                });
+        },
+        
+        loadRooms() {
+            this.loading = true;
+            
+            fetch('${pageContext.request.contextPath}/managerooms/api/list')
+                .then(response => response.json())
+                .then(data => {
+                    // Show ALL rooms, regardless of status
+                    this.rooms = Array.isArray(data) ? data : [];
                     
-                    this.loadRoomTypes();
-                    this.loadRooms();
-                    
-                    // Reset to first page when filters change
-                    this.$watch('filteredRooms', () => {
-                        this.currentPage = 1;
-                    });
-                },
-                
-                loadUserData() {
-                    // Check localStorage first (persistent login)
-                    this.authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-                    this.userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
-                    this.userName = localStorage.getItem('userName') || sessionStorage.getItem('userName');
-                    this.userEmail = localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail');
-                    this.userRegNo = localStorage.getItem('userRegNo') || sessionStorage.getItem('userRegNo');
-                    this.userType = localStorage.getItem('userType') || sessionStorage.getItem('userType');
-                    
-                    this.isLoggedIn = !!(this.authToken && this.userId);
-                    
-                    if (this.isLoggedIn) {
-                        console.log('User logged in:', this.userName, 'Type:', this.userType);
-                    }
-                },
-                
-                loadRoomTypes() {
-                    fetch('${pageContext.request.contextPath}/roomtypes/api/list')
-                        .then(response => response.json())
-                        .then(data => {
-                            this.roomTypes = Array.isArray(data) ? data : [];
-                        })
-                        .catch(error => {
-                            console.error('Error loading room types:', error);
-                            this.roomTypes = [];
-                        });
-                },
-                
-                loadRooms() {
-                    this.loading = true;
-                    
-                    fetch('${pageContext.request.contextPath}/managerooms/api/list')
-                        .then(response => response.json())
-                        .then(data => {
-                            // Only show available rooms
-                            this.rooms = Array.isArray(data) ? data.filter(room => room.status === 'available') : [];
-                            this.applyFilters();
-                            this.loading = false;
-                        })
-                        .catch(error => {
-                            console.error('Error loading rooms:', error);
-                            this.rooms = [];
-                            this.filteredRooms = [];
-                            this.loading = false;
-                            
-                            if (window.showError) {
-                                window.showError('Failed to load rooms', 3000);
-                            }
-                        });
-                },
-                
-                applyFilters() {
-                    let filtered = [...this.rooms];
-                    
-                    // Filter by type
-                    if (this.filters.typeId !== 'all') {
-                        filtered = filtered.filter(room => room.typeId == this.filters.typeId);
-                    }
-                    
-                    // Filter by price range
-                    if (this.filters.minPrice) {
-                        filtered = filtered.filter(room => room.price >= parseFloat(this.filters.minPrice));
-                    }
-                    if (this.filters.maxPrice) {
-                        filtered = filtered.filter(room => room.price <= parseFloat(this.filters.maxPrice));
-                    }
-                    
-                    // Filter by capacity
-                    if (this.filters.capacity !== 'all') {
-                        const capacityValue = parseInt(this.filters.capacity);
-                        if (capacityValue === 12) {
-                            filtered = filtered.filter(room => room.capacity >= 12);
-                        } else {
-                            filtered = filtered.filter(room => room.capacity >= capacityValue);
-                        }
-                    }
-                    
-                    // Apply sorting
-                    switch(this.filters.sortBy) {
-                        case 'price_low':
-                            filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
-                            break;
-                        case 'price_high':
-                            filtered.sort((a, b) => (b.price || 0) - (a.price || 0));
-                            break;
-                        case 'capacity_low':
-                            filtered.sort((a, b) => (a.capacity || 0) - (b.capacity || 0));
-                            break;
-                        case 'capacity_high':
-                            filtered.sort((a, b) => (b.capacity || 0) - (a.capacity || 0));
-                            break;
-                        default:
-                            // Recommended: sort by price (low to high) as default
-                            filtered.sort((a, b) => (a.price || 0) - (b.price || 0));
-                    }
-                    
-                    this.filteredRooms = filtered;
-                },
-                
-                clearFilters() {
-                    this.filters = {
-                        typeId: 'all',
-                        minPrice: '',
-                        maxPrice: '',
-                        capacity: 'all',
-                        sortBy: 'recommended'
-                    };
-                    this.applyFilters();
-                    
-                    if (window.showInfo) {
-                        window.showInfo('Filters cleared', 2000);
-                    }
-                },
-                
-                // Pagination methods
-                get paginatedRooms() {
-                    let start = (this.currentPage - 1) * this.itemsPerPage;
-                    let end = start + this.itemsPerPage;
-                    return this.filteredRooms.slice(start, end);
-                },
-                
-                get totalPages() {
-                    return Math.ceil(this.filteredRooms.length / this.itemsPerPage);
-                },
-                
-                prevPage() {
-                    if (this.currentPage > 1) this.currentPage--;
-                },
-                
-                nextPage() {
-                    if (this.currentPage < this.totalPages) this.currentPage++;
-                },
-                
-                goToPage(page) {
-                    this.currentPage = page;
-                },
-                
-                // Modal methods
-                openBookingModal(room) {
-                    if (!this.isLoggedIn) {
-                        // Show message and redirect to login if not logged in
-                        if (window.showInfo) {
-                            window.showInfo('Please login to book a room', 3000);
-                        }
-                        setTimeout(() => {
-                            window.location.href = '${pageContext.request.contextPath}/login.jsp?redirect=bookroom';
-                        }, 1500);
-                        return;
-                    }
-                    
-                    this.selectedRoom = room;
-                    this.showBookingModal = true;
-                    
-                    // Initialize date pickers after modal is shown
-                    setTimeout(() => {
-                        this.initDatePickers();
-                    }, 100);
-                },
-                
-                closeBookingModal() {
-                    this.showBookingModal = false;
-                    this.selectedRoom = null;
-                    this.resetBookingDetails();
-                },
-                
-                resetBookingDetails() {
-                    this.bookingDetails = {
-                        checkIn: '',
-                        checkOut: '',
-                        nights: 1,
-                        arrivalTime: '14:00',
-                        specialRequests: '',
-                        totalPrice: 0
-                    };
-                },
-                
-                initDatePickers() {
-                    if (!this.$refs.checkInDate || !this.$refs.checkOutDate) return;
-                    
-                    const today = new Date();
-                    const tomorrow = new Date(today);
-                    tomorrow.setDate(tomorrow.getDate() + 1);
-                    
-                    // Check-in date picker
-                    flatpickr(this.$refs.checkInDate, {
-                        minDate: 'today',
-                        dateFormat: 'Y-m-d',
-                        defaultDate: today,
-                        onChange: (selectedDates, dateStr) => {
-                            this.bookingDetails.checkIn = dateStr;
-                            this.updateNightsAndTotal();
-                            
-                            // Update check-out min date
-                            if (this.$refs.checkOutDate._flatpickr) {
-                                this.$refs.checkOutDate._flatpickr.set('minDate', dateStr);
-                            }
-                        }
+                    // Fetch bookings for each room to check if they have active bookings
+                    const promises = this.rooms.map(room => {
+                        return fetch('${pageContext.request.contextPath}/bookings/api/room?roomId=' + room.id)
+                            .then(res => res.json())
+                            .then(bookings => {
+                                // Check if room has any confirmed bookings
+                                room.hasActiveBookings = bookings.some(b => 
+                                    b.status === 'confirmed'
+                                );
+                                return room;
+                            })
+                            .catch(() => {
+                                room.hasActiveBookings = false;
+                                return room;
+                            });
                     });
                     
-                    // Check-out date picker
-                    flatpickr(this.$refs.checkOutDate, {
-                        minDate: tomorrow,
-                        dateFormat: 'Y-m-d',
-                        defaultDate: tomorrow,
-                        onChange: (selectedDates, dateStr) => {
-                            this.bookingDetails.checkOut = dateStr;
-                            this.updateNightsAndTotal();
-                        }
+                    Promise.all(promises).then(() => {
+                        this.applyFilters();
+                        this.loading = false;
                     });
+                })
+                .catch(error => {
+                    console.error('Error loading rooms:', error);
+                    this.rooms = [];
+                    this.filteredRooms = [];
+                    this.loading = false;
                     
-                    // Set initial values
-                    this.bookingDetails.checkIn = this.formatDate(today);
-                    this.bookingDetails.checkOut = this.formatDate(tomorrow);
-                    this.updateNightsAndTotal();
-                },
-                
-                formatDate(date) {
-                    const year = date.getFullYear();
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const day = String(date.getDate()).padStart(2, '0');
-                    return `${year}-${month}-${day}`;
-                },
-                
-                updateNightsAndTotal() {
-                    if (this.bookingDetails.checkIn && this.bookingDetails.checkOut) {
-                        const checkIn = new Date(this.bookingDetails.checkIn);
-                        const checkOut = new Date(this.bookingDetails.checkOut);
-                        const diffTime = Math.abs(checkOut - checkIn);
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    if (window.showError) {
+                        window.showError('Failed to load rooms', 3000);
+                    }
+                });
+        },
+        
+        loadUnavailableDates(roomId) {
+            return fetch('${pageContext.request.contextPath}/bookings/api/room?roomId=' + roomId)
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to fetch bookings');
+                    return response.json();
+                })
+                .then(bookings => {
+                    console.log('Bookings for room', roomId, ':', bookings);
+                    // Only consider confirmed bookings as blocking availability
+                    const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
+                    console.log('Confirmed bookings for room', roomId, ':', confirmedBookings);
+
+                    // Clear previous unavailable dates
+                    this.unavailableDates = [];
+                    
+                    confirmedBookings.forEach(booking => {
+                        console.log('Processing booking:', booking.checkInDate, 'to', booking.checkOutDate);
                         
-                        this.bookingDetails.nights = diffDays || 1;
+                        // Parse dates as strings only - no Date objects to avoid timezone issues
+                        const startDateStr = booking.checkInDate; // YYYY-MM-DD
+                        const endDateStr = booking.checkOutDate;   // YYYY-MM-DD
                         
-                        if (this.selectedRoom && this.selectedRoom.price) {
-                            this.bookingDetails.totalPrice = (this.selectedRoom.price * this.bookingDetails.nights).toFixed(2);
+                        // Convert to comparable format (just the date strings)
+                        const startParts = startDateStr.split('-').map(Number);
+                        const endParts = endDateStr.split('-').map(Number);
+                        
+                        // Create date strings in YYYY-MM-DD format
+                        const start = new Date(startParts[0], startParts[1] - 1, startParts[2]);
+                        const end = new Date(endParts[0], endParts[1] - 1, endParts[2]);
+                        
+                        // Generate all dates between start and end (excluding end date)
+                        const currentDate = new Date(start);
+                        while (currentDate < end) {
+                            const year = currentDate.getFullYear();
+                            const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+                            const day = String(currentDate.getDate()).padStart(2, '0');
+                            const dateStr = `${year}-${month}-${day}`;
+                            
+                            // Validate the generated string is a proper YYYY-MM-DD
+                            if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr) && !this.unavailableDates.includes(dateStr)) {
+                                this.unavailableDates.push(dateStr);
+                            }
+                            
+                            // Move to next day
+                            currentDate.setDate(currentDate.getDate() + 1);
                         }
-                    }
-                },
-                
-                confirmBooking() {
-                    if (!this.bookingDetails.checkIn || !this.bookingDetails.checkOut) {
-                        if (window.showError) {
-                            window.showError('Please select check-in and check-out dates', 3000);
-                        }
-                        return;
-                    }
+                    });
                     
-                    // Show success message (test mode)
+                    console.log('Final unavailable dates for room', roomId, ':', this.unavailableDates);
+                    return Promise.resolve();
+                })
+                .catch(error => {
+                    console.error('Error loading unavailable dates:', error);
+                    this.unavailableDates = [];
+                    return Promise.resolve();
+                });
+        },
+
+        isDateUnavailable(dateStr) {
+            // dateStr is already in YYYY-MM-DD format from flatpickr
+            return this.unavailableDates.includes(dateStr);
+        },
+        
+        applyFilters() {
+            let filtered = [...this.rooms];
+            
+            // Filter by type
+            if (this.filters.typeId !== 'all') {
+                filtered = filtered.filter(room => room.typeId == this.filters.typeId);
+            }
+            
+            // Filter by price range
+            if (this.filters.minPrice) {
+                filtered = filtered.filter(room => (room.price || room.rate || 0) >= parseFloat(this.filters.minPrice));
+            }
+            if (this.filters.maxPrice) {
+                filtered = filtered.filter(room => (room.price || room.rate || 0) <= parseFloat(this.filters.maxPrice));
+            }
+            
+            // Filter by capacity
+            if (this.filters.capacity !== 'all') {
+                const capacityValue = parseInt(this.filters.capacity);
+                if (capacityValue === 12) {
+                    filtered = filtered.filter(room => (room.capacity || 0) >= 12);
+                } else {
+                    filtered = filtered.filter(room => (room.capacity || 0) >= capacityValue);
+                }
+            }
+            
+            // Apply sorting
+            switch(this.filters.sortBy) {
+                case 'price_low':
+                    filtered.sort((a, b) => (a.price || a.rate || 0) - (b.price || b.rate || 0));
+                    break;
+                case 'price_high':
+                    filtered.sort((a, b) => (b.price || b.rate || 0) - (a.price || a.rate || 0));
+                    break;
+                case 'capacity_low':
+                    filtered.sort((a, b) => (a.capacity || 0) - (b.capacity || 0));
+                    break;
+                case 'capacity_high':
+                    filtered.sort((a, b) => (b.capacity || 0) - (a.capacity || 0));
+                    break;
+                default:
+                    filtered.sort((a, b) => (a.price || a.rate || 0) - (b.price || b.rate || 0));
+            }
+            
+            this.filteredRooms = filtered;
+        },
+        
+        clearFilters() {
+            this.filters = {
+                typeId: 'all',
+                minPrice: '',
+                maxPrice: '',
+                capacity: 'all',
+                sortBy: 'recommended'
+            };
+            this.applyFilters();
+            
+            if (window.showInfo) {
+                window.showInfo('Filters cleared', 2000);
+            }
+        },
+        
+        // Pagination methods
+        get paginatedRooms() {
+            let start = (this.currentPage - 1) * this.itemsPerPage;
+            let end = start + this.itemsPerPage;
+            return this.filteredRooms.slice(start, end);
+        },
+        
+        get totalPages() {
+            return Math.ceil(this.filteredRooms.length / this.itemsPerPage);
+        },
+        
+        prevPage() {
+            if (this.currentPage > 1) this.currentPage--;
+        },
+        
+        nextPage() {
+            if (this.currentPage < this.totalPages) this.currentPage++;
+        },
+        
+        goToPage(page) {
+            this.currentPage = page;
+        },
+        
+        // Modal methods
+        async openBookingModal(room) {
+            if (!this.isLoggedIn) {
+                if (window.showInfo) {
+                    window.showInfo('Please login to book a room', 3000);
+                }
+                setTimeout(() => {
+                    window.location.href = '${pageContext.request.contextPath}/login.jsp?redirect=bookroom';
+                }, 1500);
+                return;
+            }
+            
+            if (room.status === 'maintenance') {
+                if (window.showError) {
+                    window.showError('This room is under maintenance and cannot be booked', 3000);
+                }
+                return;
+            }
+            
+            this.selectedRoom = room;
+            this.showBookingModal = true;
+            this.datePickersInitialized = false;
+            
+            this.destroyFlatpickrInstances();
+            this.resetBookingDetails();
+            
+            await this.loadUnavailableDates(room.id);
+            
+            setTimeout(() => {
+                this.initDatePickers();
+                this.initTimePicker();
+            }, 300);
+        },
+        
+        destroyFlatpickrInstances() {
+            if (this.flatpickrInstances.checkIn) {
+                this.flatpickrInstances.checkIn.destroy();
+                this.flatpickrInstances.checkIn = null;
+            }
+            if (this.flatpickrInstances.checkOut) {
+                this.flatpickrInstances.checkOut.destroy();
+                this.flatpickrInstances.checkOut = null;
+            }
+            if (this.flatpickrInstances.checkInTime) {
+                this.flatpickrInstances.checkInTime.destroy();
+                this.flatpickrInstances.checkInTime = null;
+            }
+        },
+        
+        closeBookingModal() {
+            this.showBookingModal = false;
+            this.selectedRoom = null;
+            this.unavailableDates = [];
+            this.datePickersInitialized = false;
+            this.destroyFlatpickrInstances();
+        },
+        
+        resetBookingDetails() {
+            this.bookingDetails = {
+                checkIn: '',
+                checkOut: '',
+                nights: 1,
+                checkInTime: '',
+                specialRequests: '',
+                totalPrice: 0,
+                isAvailable: true,
+                checkingAvailability: false
+            };
+        },
+        
+        initDatePickers() {
+            if (!this.$refs.checkInDate || !this.$refs.checkOutDate) {
+                console.error('Date picker refs not found');
+                return;
+            }
+            if (this.datePickersInitialized) {
+                console.log('Date pickers already initialized');
+                return;
+            }
+
+            console.log('Initializing date pickers');
+            console.log('Unavailable dates:', this.unavailableDates);
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const tomorrowStr = this.formatDate(tomorrow);
+
+            // Destroy any existing instances
+            if (this.flatpickrInstances.checkIn) {
+                this.flatpickrInstances.checkIn.destroy();
+                this.flatpickrInstances.checkIn = null;
+            }
+            if (this.flatpickrInstances.checkOut) {
+                this.flatpickrInstances.checkOut.destroy();
+                this.flatpickrInstances.checkOut = null;
+            }
+
+            // Create array of disabled dates
+            const disabledDates = this.unavailableDates && this.unavailableDates.length > 0 
+                ? this.unavailableDates 
+                : [];
+
+            // Clear input values completely
+            this.$refs.checkInDate.value = '';
+            this.$refs.checkOutDate.value = '';
+
+            try {
+                // Create check-in picker
+                this.flatpickrInstances.checkIn = flatpickr(this.$refs.checkInDate, {
+                    minDate: 'today',
+                    dateFormat: 'Y-m-d',
+                    disable: disabledDates,
+                    onChange: (selectedDates, dateStr) => {
+                        console.log('Check-in changed:', dateStr);
+                        this.bookingDetails.checkIn = dateStr;
+                        this.updateNightsAndTotal();
+                        // Update checkout min date
+                        if (this.flatpickrInstances.checkOut && dateStr) {
+                            const nextDay = new Date(dateStr);
+                            nextDay.setDate(nextDay.getDate() + 1);
+                            this.flatpickrInstances.checkOut.set('minDate', nextDay);
+                        }
+                        this.checkAvailability();
+                    }
+                });
+
+                // Create check-out picker
+                this.flatpickrInstances.checkOut = flatpickr(this.$refs.checkOutDate, {
+                    minDate: tomorrowStr,
+                    dateFormat: 'Y-m-d',
+                    disable: disabledDates,
+                    onChange: (selectedDates, dateStr) => {
+                        console.log('Check-out changed:', dateStr);
+                        this.bookingDetails.checkOut = dateStr;
+                        this.updateNightsAndTotal();
+                        this.checkAvailability();
+                    }
+                });
+
+                console.log('Flatpickr pickers created successfully');
+
+                // Initialize booking details with empty strings (user must select)
+                this.bookingDetails.checkIn = '';
+                this.bookingDetails.checkOut = '';
+                this.bookingDetails.nights = 0;
+                this.bookingDetails.totalPrice = 0;
+
+                this.datePickersInitialized = true;
+
+            } catch (error) {
+                console.error('Error initializing date pickers:', error);
+                this.datePickersInitialized = false;
+            }
+        },
+        
+        initTimePicker() {
+            if (!this.$refs.checkInTime) return;
+            
+            if (this.flatpickrInstances.checkInTime) {
+                this.flatpickrInstances.checkInTime.destroy();
+            }
+            
+            // Create a default date object for time picker (today at 14:00)
+            const defaultTime = new Date();
+            defaultTime.setHours(14, 0, 0);
+            
+            this.flatpickrInstances.checkInTime = flatpickr(this.$refs.checkInTime, {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                defaultDate: defaultTime,
+                minuteIncrement: 15,
+                onChange: (selectedDates, timeStr) => {
+                    this.bookingDetails.checkInTime = timeStr;
+                }
+            });
+            
+            // Set initial time value from input
+            this.bookingDetails.checkInTime = this.$refs.checkInTime.value || "14:00";
+        },
+        
+        formatDate(date) {
+            if (!date) return '';
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        },
+        
+        updateNightsAndTotal() {
+            if (this.bookingDetails.checkIn && this.bookingDetails.checkOut) {
+                const checkIn = new Date(this.bookingDetails.checkIn + 'T00:00:00');
+                const checkOut = new Date(this.bookingDetails.checkOut + 'T00:00:00');
+                const diffTime = Math.abs(checkOut - checkIn);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                this.bookingDetails.nights = diffDays || 1;
+                
+                const pricePerNight = this.selectedRoom?.price || this.selectedRoom?.rate || 0;
+                this.bookingDetails.totalPrice = (pricePerNight * this.bookingDetails.nights).toFixed(2);
+            }
+        },
+        
+        checkAvailability() {
+            if (!this.selectedRoom || 
+                !this.bookingDetails.checkIn || 
+                !this.bookingDetails.checkOut ||
+                this.bookingDetails.checkIn === '' ||
+                this.bookingDetails.checkOut === '') {
+                this.bookingDetails.isAvailable = false;
+                return;
+            }
+            
+            const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+            if (!dateRegex.test(this.bookingDetails.checkIn) || !dateRegex.test(this.bookingDetails.checkOut)) {
+                console.warn('Invalid date format:', this.bookingDetails.checkIn, this.bookingDetails.checkOut);
+                this.bookingDetails.isAvailable = false;
+                return;
+            }
+            
+            // Parse dates
+            const checkInParts = this.bookingDetails.checkIn.split('-').map(Number);
+            const checkOutParts = this.bookingDetails.checkOut.split('-').map(Number);
+            
+            const checkInDate = new Date(checkInParts[0], checkInParts[1] - 1, checkInParts[2]);
+            const checkOutDate = new Date(checkOutParts[0], checkOutParts[1] - 1, checkOutParts[2]);
+            
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (checkInDate < today) {
+                this.bookingDetails.isAvailable = false;
+                return;
+            }
+            
+            if (checkOutDate <= checkInDate) {
+                this.bookingDetails.isAvailable = false;
+                return;
+            }
+            
+            // Check each date in the range (excluding check-out date)
+            let hasConflict = false;
+            const currentDate = new Date(checkInDate);
+            
+            while (currentDate < checkOutDate) {
+                const year = currentDate.getFullYear();
+                const month = String(currentDate.getMonth() + 1).padStart(2, '0');
+                const day = String(currentDate.getDate()).padStart(2, '0');
+                const dateStr = `${year}-${month}-${day}`;
+                
+                if (this.unavailableDates.includes(dateStr)) {
+                    console.warn('Date unavailable:', dateStr);
+                    hasConflict = true;
+                    break;
+                }
+                
+                // Move to next day
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            this.bookingDetails.isAvailable = !hasConflict;
+            console.log('Room available:', this.bookingDetails.isAvailable);
+        },
+        
+        confirmBooking() {
+            if (!this.bookingDetails.checkIn || !this.bookingDetails.checkOut) {
+                if (window.showError) {
+                    window.showError('Please select check-in and check-out dates', 3000);
+                }
+                return;
+            }
+            
+            if (!this.bookingDetails.checkInTime) {
+                if (window.showError) {
+                    window.showError('Please select check-in time', 3000);
+                }
+                return;
+            }
+            
+            if (!this.bookingDetails.isAvailable) {
+                if (window.showError) {
+                    window.showError('This room is not available for the selected dates', 3000);
+                }
+                return;
+            }
+            
+            if (this.selectedRoom.status === 'maintenance') {
+                if (window.showError) {
+                    window.showError('This room is under maintenance and cannot be booked', 3000);
+                }
+                return;
+            }
+            
+            const bookingData = {
+                roomId: parseInt(this.selectedRoom.id),
+                guestId: parseInt(this.userId),
+                checkInDate: this.bookingDetails.checkIn,
+                checkOutDate: this.bookingDetails.checkOut,
+                checkInTime: this.bookingDetails.checkInTime + ':00',
+                specialRequests: this.bookingDetails.specialRequests || '',
+                totalPrice: parseFloat(this.bookingDetails.totalPrice)
+            };
+            
+            if (window.showInfo) {
+                window.showInfo('Processing your booking...', 0);
+            }
+            
+            fetch('${pageContext.request.contextPath}/bookings/api/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bookingData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || `Server error: ${response.status}`);
+                    }).catch(() => {
+                        throw new Error(`Server error: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
                     if (window.showSuccess) {
-                        window.showSuccess('Booking confirmed! (Test Mode - This is just a demo)', 3000);
+                        window.showSuccess(data.message, 5000);
                     }
                     
-                    // Log booking details to console
-                    console.log('Booking Details:', {
-                        room: this.selectedRoom,
-                        userId: this.userId,
-                        userName: this.userName,
-                        checkIn: this.bookingDetails.checkIn,
-                        checkOut: this.bookingDetails.checkOut,
-                        nights: this.bookingDetails.nights,
-                        arrivalTime: this.bookingDetails.arrivalTime,
-                        specialRequests: this.bookingDetails.specialRequests,
-                        totalPrice: this.bookingDetails.totalPrice
-                    });
-                    
-                    // Close modal
+                    this.loadRooms();
+        
                     setTimeout(() => {
                         this.closeBookingModal();
                     }, 2000);
-                },
-                
-                // Book room action with user data
-                bookRoom(room) {
-                    if (!this.isLoggedIn) {
-                        // Show message and redirect to login if not logged in
-                        if (window.showInfo) {
-                            window.showInfo('Please login to book a room', 3000);
-                        }
-                        setTimeout(() => {
-                            window.location.href = '${pageContext.request.contextPath}/login.jsp?redirect=bookroom';
-                        }, 1500);
-                        return;
-                    }
-                    
-                    // Store selected room in session for booking page
-                    sessionStorage.setItem('selectedRoomId', room.id);
-                    sessionStorage.setItem('selectedRoomNo', room.roomNo);
-                    sessionStorage.setItem('selectedRoomPrice', room.price);
-                    
-                    // Redirect to booking page with room details and user info
-                    window.location.href = '${pageContext.request.contextPath}/booking.jsp?roomId=' + room.id;
-                    
-                    if (window.showSuccess) {
-                        window.showSuccess('Redirecting to booking...', 2000);
+                } else {
+                    if (window.showError) {
+                        window.showError(data.message, 5000);
                     }
                 }
-            }
+            })
+            .catch(error => {
+                console.error('Error creating booking:', error);
+                if (window.showError) {
+                    window.showError(error.message || 'Failed to create booking. Please try again.', 3000);
+                }
+            });
         }
+    }
+}
     </script>
 </body>
 </html>

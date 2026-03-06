@@ -24,6 +24,9 @@
 
     <!-- Include Sidebar -->
     <jsp:include page="/component/sidebar.jsp" />
+    
+    <!-- Include notification.jsp -->
+    <jsp:include page="/component/notification.jsp" />
 
     <!-- ===== MAIN DASHBOARD (right side) ===== -->
     <main class="flex-1 overflow-y-auto">
