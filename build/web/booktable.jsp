@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Flatpickr for date picker -->
+    <!-- Flatpickr for date and time picker -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
@@ -34,13 +34,13 @@
             display: flex;
             flex-direction: column;
             position: relative;
-            box-shadow: 0 10px 30px -15px rgba(2, 132, 168, 0.2);
+            box-shadow: 0 10px 30px -15px rgba(212, 163, 115, 0.2);
         }
         
         .table-card:hover {
             transform: translateY(-12px) scale(1.02);
-            box-shadow: 0 30px 40px -15px rgba(2, 132, 168, 0.4);
-            border-color: #0284a8;
+            box-shadow: 0 30px 40px -15px rgba(212, 163, 115, 0.4);
+            border-color: #d4a373;
         }
         
         .table-image-wrapper {
@@ -82,10 +82,10 @@
             border-radius: 50px;
             font-size: 0.75rem;
             font-weight: 700;
-            color: #0284a8;
+            color: #d4a373;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
             z-index: 2;
-            border: 1px solid rgba(2, 132, 168, 0.3);
+            border: 1px solid rgba(212, 163, 115, 0.3);
             display: flex;
             align-items: center;
             gap: 0.5rem;
@@ -93,7 +93,26 @@
         
         .table-badge i {
             font-size: 0.875rem;
-            color: #d4a373;
+            color: #0284a8;
+        }
+        
+        .location-badge-table {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(5px);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #0284a8;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 2;
+            border: 1px solid rgba(2, 132, 168, 0.3);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         
         .image-counter {
@@ -116,7 +135,7 @@
         
         .image-counter i {
             font-size: 0.7rem;
-            color: #b5e5e0;
+            color: #d4a373;
         }
         
         /* Navigation dots */
@@ -141,9 +160,9 @@
         }
         
         .nav-dot.active {
-            background: #0284a8;
+            background: #d4a373;
             transform: scale(1.3);
-            box-shadow: 0 0 10px rgba(2, 132, 168, 0.5);
+            box-shadow: 0 0 10px rgba(212, 163, 115, 0.5);
         }
         
         .nav-dot:hover {
@@ -166,8 +185,8 @@
             justify-content: center;
             cursor: pointer;
             transition: all 0.3s ease;
-            border: 1px solid rgba(2, 132, 168, 0.2);
-            color: #0284a8;
+            border: 1px solid rgba(212, 163, 115, 0.2);
+            color: #d4a373;
             font-size: 1rem;
             z-index: 3;
             opacity: 0;
@@ -179,10 +198,10 @@
         }
         
         .nav-arrow:hover {
-            background: #0284a8;
+            background: #d4a373;
             color: white;
             transform: translateY(-50%) scale(1.1);
-            border-color: #0284a8;
+            border-color: #d4a373;
         }
         
         .nav-arrow.prev {
@@ -199,7 +218,7 @@
             flex: 1;
             display: flex;
             flex-direction: column;
-            background: linear-gradient(to bottom, white, #fafeff);
+            background: linear-gradient(to bottom, white, #fff9f0);
         }
         
         .table-title {
@@ -236,33 +255,33 @@
         }
         
         .location-badge-enhanced.first-floor {
-            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-            color: #1e40af;
+            background: linear-gradient(135deg, #e6f0fa, #d4e4f5);
+            color: #2c5282;
         }
         
         .location-badge-enhanced.second-floor {
-            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-            color: #166534;
+            background: linear-gradient(135deg, #e6f7e6, #c8e6c9);
+            color: #27632e;
         }
         
         .location-badge-enhanced.beachside {
-            background: linear-gradient(135deg, #fef3c7, #fde68a);
-            color: #92400e;
+            background: linear-gradient(135deg, #f3e5f5, #e1bee7);
+            color: #6a1b9a;
         }
         
         .location-badge-enhanced.poolside {
-            background: linear-gradient(135deg, #cffafe, #a5f3fc);
-            color: #0891b2;
+            background: linear-gradient(135deg, #fff3e0, #ffe0b2);
+            color: #b85d1a;
         }
         
         .location-badge-enhanced.rooftop {
-            background: linear-gradient(135deg, #e9d5ff, #d8b4fe);
-            color: #6b21a8;
+            background: linear-gradient(135deg, #ffe5e5, #ffcdd2);
+            color: #b71c1c;
         }
         
         .location-badge-enhanced.garden {
-            background: linear-gradient(135deg, #d9f99d, #bef264);
-            color: #3f6212;
+            background: linear-gradient(135deg, #e0f2f1, #b2dfdb);
+            color: #00695c;
         }
         
         .table-description {
@@ -276,46 +295,81 @@
             overflow: hidden;
         }
         
+        /* Capacity indicator */
+        .capacity-container {
+            margin-bottom: 1.25rem;
+        }
+        
+        .capacity-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #3a5a78;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .capacity-title i {
+            color: #d4a373;
+        }
+        
+        .capacity-indicator {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .capacity-icons {
+            display: flex;
+            gap: 0.25rem;
+        }
+        
+        .capacity-icons i {
+            color: #d4a373;
+            font-size: 1rem;
+        }
+        
+        .capacity-text {
+            font-weight: 600;
+            color: #1e3c5c;
+            font-size: 0.9rem;
+            margin-left: 0.5rem;
+        }
+        
         /* Price and action */
-        .info-section {
+        .price-section {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-top: auto;
             padding-top: 1.25rem;
-            border-top: 2px dashed rgba(181, 229, 224, 0.5);
+            border-top: 2px dashed rgba(212, 163, 115, 0.3);
         }
         
-        .capacity-info {
+        .price-info {
             display: flex;
             flex-direction: column;
         }
         
-        .capacity-label {
+        .price-label {
             font-size: 0.7rem;
             color: #6b8da8;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         
-        .capacity-value {
+        .price-value {
             font-size: 1.8rem;
             font-weight: 800;
-            color: #0284a8;
+            color: #d4a373;
             line-height: 1.2;
-            display: flex;
-            align-items: baseline;
-            gap: 0.25rem;
-        }
-        
-        .capacity-value small {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #3a5a78;
         }
         
         .book-now-btn-enhanced {
-            background: linear-gradient(135deg, #0284a8, #03738C);
+            background: linear-gradient(135deg, #d4a373, #b88b4a);
             color: white;
             padding: 0.75rem 1.8rem;
             border-radius: 50px;
@@ -327,7 +381,7 @@
             gap: 0.75rem;
             border: none;
             cursor: pointer;
-            box-shadow: 0 8px 15px -5px rgba(2, 132, 168, 0.4);
+            box-shadow: 0 8px 15px -5px rgba(212, 163, 115, 0.4);
             position: relative;
             overflow: hidden;
         }
@@ -357,8 +411,8 @@
         
         .book-now-btn-enhanced:hover:not(.disabled) {
             transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 15px 25px -8px rgba(2, 132, 168, 0.6);
-            background: linear-gradient(135deg, #03738C, #025c73);
+            box-shadow: 0 15px 25px -8px rgba(212, 163, 115, 0.6);
+            background: linear-gradient(135deg, #b88b4a, #9e742e);
         }
         
         .book-now-btn-enhanced:hover:not(.disabled)::before {
@@ -376,12 +430,12 @@
         
         /* Enhanced filter section */
         .filter-section-enhanced {
-            background: linear-gradient(135deg, white, #f8fafc);
+            background: linear-gradient(135deg, white, #fff9f0);
             border-radius: 2rem;
-            border: 1px solid rgba(181, 229, 224, 0.5);
+            border: 1px solid rgba(212, 163, 115, 0.3);
             padding: 2rem;
             margin-bottom: 2.5rem;
-            box-shadow: 0 20px 40px -15px rgba(2, 132, 168, 0.15);
+            box-shadow: 0 20px 40px -15px rgba(212, 163, 115, 0.15);
         }
         
         .filter-title-enhanced {
@@ -411,15 +465,15 @@
             background: white;
             cursor: pointer;
             appearance: none;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%230284a8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23d4a373' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 1rem center;
         }
         
         .filter-select-enhanced:focus {
             outline: none;
-            border-color: #0284a8;
-            box-shadow: 0 0 0 4px rgba(2, 132, 168, 0.1);
+            border-color: #d4a373;
+            box-shadow: 0 0 0 4px rgba(212, 163, 115, 0.1);
         }
         
         .clear-filters-btn {
@@ -444,7 +498,7 @@
         
         /* User welcome bar */
         .user-welcome {
-            background: linear-gradient(135deg, #0284a8, #03738C);
+            background: linear-gradient(135deg, #d4a373, #b88b4a);
             border-radius: 2rem;
             padding: 1rem 2rem;
             color: white;
@@ -452,7 +506,7 @@
             align-items: center;
             justify-content: space-between;
             margin-bottom: 2rem;
-            box-shadow: 0 10px 25px -5px rgba(2, 132, 168, 0.4);
+            box-shadow: 0 10px 25px -5px rgba(212, 163, 115, 0.4);
         }
         
         .user-info {
@@ -508,16 +562,16 @@
         }
         
         .pagination-btn:hover:not(:disabled) {
-            background: #0284a8;
-            border-color: #0284a8;
+            background: #d4a373;
+            border-color: #d4a373;
             color: white;
             transform: translateY(-3px);
-            box-shadow: 0 10px 15px -5px rgba(2, 132, 168, 0.4);
+            box-shadow: 0 10px 15px -5px rgba(212, 163, 115, 0.4);
         }
         
         .pagination-btn.active {
-            background: #0284a8;
-            border-color: #0284a8;
+            background: #d4a373;
+            border-color: #d4a373;
             color: white;
         }
         
@@ -528,7 +582,7 @@
         
         /* Loading skeleton enhanced */
         .skeleton-enhanced {
-            background: linear-gradient(90deg, #f0f7fa 25%, #e2e8f0 50%, #f0f7fa 75%);
+            background: linear-gradient(90deg, #fff9f0 25%, #e2e8f0 50%, #fff9f0 75%);
             background-size: 200% 100%;
             animation: loading 1.5s infinite;
         }
@@ -618,18 +672,48 @@
         
         .booking-input:focus {
             outline: none;
-            border-color: #0284a8;
-            box-shadow: 0 0 0 4px rgba(2, 132, 168, 0.1);
+            border-color: #d4a373;
+            box-shadow: 0 0 0 4px rgba(212, 163, 115, 0.1);
         }
         
-        .time-select {
+        .booking-input.unavailable {
+            border-color: #ef4444;
+            background-color: #fee2e2;
+        }
+        
+        .booking-input.available {
+            border-color: #10b981;
+            background-color: #f0fdf4;
+        }
+        
+        .time-picker-container {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .time-input {
             width: 100%;
             padding: 0.75rem 1rem;
             border: 2px solid #e2e8f0;
             border-radius: 1rem;
             font-size: 0.95rem;
+            transition: all 0.3s ease;
             background: white;
             cursor: pointer;
+        }
+        
+        .time-input:focus {
+            outline: none;
+            border-color: #d4a373;
+            box-shadow: 0 0 0 4px rgba(212, 163, 115, 0.1);
+        }
+        
+        .total-price {
+            background: linear-gradient(135deg, #fff9f0, #ffe8d6);
+            padding: 1rem;
+            border-radius: 1rem;
+            border: 1px solid #d4a373;
         }
         
         .confirm-btn {
@@ -644,9 +728,15 @@
             flex: 1;
         }
         
-        .confirm-btn:hover {
+        .confirm-btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+        }
+        
+        .confirm-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: linear-gradient(135deg, #94a3b8, #64748b);
         }
         
         .cancel-btn {
@@ -665,9 +755,76 @@
             background: #f1f5f9;
             border-color: #94a3b8;
         }
+        
+        .availability-warning {
+            background-color: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #b91c1c;
+            padding: 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .availability-warning i {
+            color: #ef4444;
+        }
+
+        /* Unavailable date style for flatpickr */
+        .flatpickr-day.unavailable {
+            background-color: #fee2e2 !important;
+            color: #ef4444 !important;
+            text-decoration: line-through;
+            cursor: not-allowed;
+            border-color: #ef4444 !important;
+        }
+        
+        .flatpickr-day.unavailable:hover {
+            background-color: #fecaca !important;
+        }
+        
+        /* Ensure flatpickr calendar is on top of everything */
+        .flatpickr-calendar {
+            z-index: 999999 !important;
+            pointer-events: auto !important;
+        }
+
+        /* Partially booked badge */
+        .partial-badge {
+            position: absolute;
+            top: 60px;
+            left: 15px;
+            background: #fbbf24;
+            color: #92400e;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            z-index: 2;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Maintenance badge */
+        .maintenance-badge {
+            position: absolute;
+            top: 60px;
+            left: 15px;
+            background: #ef4444;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            z-index: 2;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-[#f0f7fa] text-[#1e3c5c] antialiased" x-data="tableBooking()" x-init="init()">
+<body class="bg-[#fff9f0] text-[#1e3c5c] antialiased" x-data="tableBooking()" x-init="init()">
 
     <!-- Include Navbar -->
     <jsp:include page="component/navbar.jsp" />
@@ -678,7 +835,7 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
         
         <!-- User Welcome Bar (shown when logged in) -->
-        <div x-show="isLoggedIn" class="user-welcome">
+        <div x-show="isLoggedIn" class="user-welcome" x-cloak>
             <div class="user-info">
                 <div class="user-avatar">
                     <i class="fas fa-user-circle"></i>
@@ -693,7 +850,7 @@
         <!-- Page Header -->
         <div class="mb-8 text-center md:text-left">
             <h1 class="text-4xl md:text-5xl font-bold text-[#1e3c5c]">Book Your Table <span class="text-[#d4a373]">🍽️</span></h1>
-            <p class="text-[#3a5a78] mt-3 text-lg">Choose from our selection of dining tables with beautiful views</p>
+            <p class="text-[#3a5a78] mt-3 text-lg">Reserve the perfect table for your dining experience with ocean views</p>
         </div>
 
         <!-- Enhanced Filter Section -->
@@ -728,15 +885,18 @@
                     </select>
                 </div>
 
-                <!-- Status Filter -->
+                <!-- Date Filter -->
                 <div>
                     <div class="filter-title-enhanced">
-                        <i class="fas fa-circle"></i> Status
+                        <i class="fas fa-calendar-alt"></i> Date
                     </div>
-                    <select x-model="filters.status" @change="applyFilters()" class="filter-select-enhanced">
-                        <option value="all">All Status</option>
-                        <option value="available">Available Only</option>
-                    </select>
+                    <input type="text" 
+                           x-ref="dateFilter"
+                           x-model="filters.date"
+                           @change="applyFilters()"
+                           placeholder="Select date"
+                           class="filter-select-enhanced"
+                           readonly>
                 </div>
 
                 <!-- Sort By -->
@@ -753,12 +913,12 @@
             </div>
 
             <!-- Active Filters Summary -->
-            <div class="flex flex-wrap items-center justify-between mt-6 pt-4 border-t border-[#b5e5e0]">
+            <div class="flex flex-wrap items-center justify-between mt-6 pt-4 border-t border-[#d4a373] border-opacity-30">
                 <div class="text-sm text-[#3a5a78] flex items-center gap-2">
-                    <i class="fas fa-utensils text-[#0284a8]"></i>
+                    <i class="fas fa-utensils text-[#d4a373]"></i>
                     <span x-text="filteredTables.length + ' tables available'"></span>
-                    <span x-show="filters.locationId !== 'all' || filters.capacity !== 'all' || filters.status !== 'all'" 
-                          class="text-xs bg-[#0284a8] text-white px-2 py-1 rounded-full">
+                    <span x-show="filters.locationId !== 'all' || filters.capacity !== 'all' || filters.date" 
+                          class="text-xs bg-[#d4a373] text-white px-2 py-1 rounded-full">
                         Filtered
                     </span>
                 </div>
@@ -779,6 +939,10 @@
                             <div class="h-7 skeleton-enhanced rounded-full w-3/4"></div>
                             <div class="h-4 skeleton-enhanced rounded-full w-full"></div>
                             <div class="h-4 skeleton-enhanced rounded-full w-2/3"></div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div class="h-8 skeleton-enhanced rounded-lg"></div>
+                                <div class="h-8 skeleton-enhanced rounded-lg"></div>
+                            </div>
                             <div class="flex justify-between items-center pt-3">
                                 <div class="h-10 skeleton-enhanced rounded-full w-24"></div>
                                 <div class="h-12 skeleton-enhanced rounded-full w-28"></div>
@@ -791,12 +955,12 @@
             <!-- No Tables Found -->
             <template x-if="!loading && filteredTables.length === 0">
                 <div class="col-span-full">
-                    <div class="no-tables">
+                    <div class="text-center py-16">
                         <span class="text-7xl mb-6 block">🍽️</span>
                         <h3 class="text-3xl font-bold text-[#1e3c5c] mb-3">No Tables Available</h3>
-                        <p class="text-[#3a5a78] mb-6 text-lg">Try adjusting your filters to find the perfect table for your dining experience.</p>
+                        <p class="text-[#3a5a78] mb-6 text-lg">Try adjusting your filters to find the perfect table for your dining.</p>
                         <button @click="clearFilters()" 
-                                class="px-8 py-4 bg-gradient-to-r from-[#0284a8] to-[#03738C] text-white rounded-full hover:shadow-xl transition-all transform hover:scale-105">
+                                class="px-8 py-4 bg-gradient-to-r from-[#d4a373] to-[#b88b4a] text-white rounded-full hover:shadow-xl transition-all transform hover:scale-105">
                             <i class="fas fa-redo-alt mr-2"></i> Clear Filters
                         </button>
                     </div>
@@ -809,17 +973,29 @@
                     <div class="table-card">
                         <!-- Image Gallery with Navigation -->
                         <div class="table-image-wrapper" x-data="{ currentImage: 0 }">
-                            <img :src="table.images && table.images.length > 0 ? table.images[currentImage] : 'https://via.placeholder.com/600x400?text=Ocean+View+Resort'" 
+                            <img :src="table.images && table.images.length > 0 ? table.images[currentImage] : 'https://via.placeholder.com/600x400?text=Ocean+View+Resort+Table'" 
                                  class="table-image"
                                  alt="Table">
                             
                             <!-- Gradient Overlay -->
                             <div class="image-overlay"></div>
                             
-                            <!-- Table Badge -->
+                            <!-- Table Number Badge -->
                             <div class="table-badge">
-                                <i class="fas fa-utensils"></i>
-                                <span x-text="'Table ' + table.tableNo"></span>
+                                <i class="fas fa-hashtag"></i>
+                                <span x-text="table.tablePrefix + ' - ' + table.tableNo"></span>
+                            </div>
+                            
+                            <!-- Location Badge -->
+                            <div class="location-badge-table">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span x-text="table.locationName || 'Unknown'"></span>
+                            </div>
+                            
+                            <!-- Maintenance Badge -->
+                            <div class="maintenance-badge" x-show="table.status === 'maintenance'">
+                                <i class="fas fa-tools mr-1"></i>
+                                <span>Maintenance</span>
                             </div>
                             
                             <!-- Image Counter -->
@@ -856,40 +1032,58 @@
                             <!-- Table Title and Location -->
                             <div class="table-title">
                                 <div class="table-number">
-                                    <i class="fas fa-hashtag"></i>
+                                    <i class="fas fa-utensils"></i>
                                     <span x-text="table.tableNo"></span>
                                 </div>
                                 <span class="location-badge-enhanced"
                                       :class="{
-                                          'first-floor': table.locationName === '1st Floor',
-                                          'second-floor': table.locationName === '2nd Floor',
-                                          'beachside': table.locationName === 'Beachside',
-                                          'poolside': table.locationName === 'Poolside',
-                                          'rooftop': table.locationName === 'Rooftop',
-                                          'garden': table.locationName === 'Garden'
+                                          'first-floor': (table.locationName || '').toLowerCase() === '1st floor',
+                                          'second-floor': (table.locationName || '').toLowerCase() === '2nd floor',
+                                          'beachside': (table.locationName || '').toLowerCase() === 'beachside',
+                                          'poolside': (table.locationName || '').toLowerCase() === 'poolside',
+                                          'rooftop': (table.locationName || '').toLowerCase() === 'rooftop',
+                                          'garden': (table.locationName || '').toLowerCase() === 'garden'
                                       }">
                                     <i class="fas fa-map-pin mr-1"></i>
-                                    <span x-text="table.locationName || 'Indoor'"></span>
+                                    <span x-text="table.locationName || 'Standard'"></span>
                                 </span>
                             </div>
 
                             <!-- Description -->
-                            <p class="table-description" x-text="table.description || 'Enjoy a delightful dining experience at this beautifully located table with excellent service.'"></p>
+                            <p class="table-description" x-text="table.description || 'Enjoy a wonderful dining experience at this beautifully appointed table.'"></p>
 
-                            <!-- Capacity and Book Button -->
-                            <div class="info-section">
-                                <div class="capacity-info">
-                                    <span class="capacity-label">Seats up to</span>
-                                    <div class="capacity-value">
-                                        <span x-text="table.capacity || '0'"></span>
-                                        <small>persons</small>
+                            <!-- Capacity Indicator -->
+                            <div class="capacity-container">
+                                <div class="capacity-title">
+                                    <i class="fas fa-users"></i>
+                                    <span>Seating Capacity</span>
+                                </div>
+                                <div class="capacity-indicator">
+                                    <div class="capacity-icons">
+                                        <template x-for="i in Math.min(table.capacity, 8)" :key="i">
+                                            <i class="fas fa-user"></i>
+                                        </template>
+                                        <template x-if="table.capacity > 8">
+                                            <span class="text-xs font-bold text-[#d4a373]">+<span x-text="table.capacity - 8"></span></span>
+                                        </template>
+                                    </div>
+                                    <span class="capacity-text" x-text="table.capacity + ' persons'"></span>
+                                </div>
+                            </div>
+
+                            <!-- Price and Book Button -->
+                            <div class="price-section">
+                                <div class="price-info">
+                                    <span class="price-label">Minimum spend</span>
+                                    <div class="price-value">
+                                        $<span x-text="table.minimumSpend || '0'"></span>
                                     </div>
                                 </div>
                                 <button @click="openBookingModal(table)" 
                                         class="book-now-btn-enhanced"
-                                        :class="{ 'disabled': !isLoggedIn }">
-                                    <span x-text="isLoggedIn ? 'Book Now' : 'Login to Book'"></span>
-                                    <i class="fas" :class="isLoggedIn ? 'fa-arrow-right' : 'fa-lock'"></i>
+                                        :class="{ 'disabled': !isLoggedIn || table.status === 'maintenance' }">
+                                    <span x-text="table.status === 'maintenance' ? 'Maintenance' : (!isLoggedIn ? 'Login to Book' : 'Book Now')"></span>
+                                    <i class="fas" :class="table.status === 'maintenance' ? 'fa-tools' : (isLoggedIn ? 'fa-arrow-right' : 'fa-lock')"></i>
                                 </button>
                             </div>
                         </div>
@@ -899,7 +1093,7 @@
         </div>
 
         <!-- Enhanced Pagination -->
-        <div x-show="!loading && filteredTables.length > 0" class="flex flex-col items-center mt-12">
+        <div x-show="!loading && filteredTables.length > 0" class="flex flex-col items-center mt-12" x-cloak>
             <div class="text-sm text-[#3a5a78] mb-4">
                 <i class="fas fa-utensils mr-2"></i>
                 <span x-text="'Showing ' + (((currentPage - 1) * itemsPerPage) + 1) + ' - ' + Math.min(currentPage * itemsPerPage, filteredTables.length) + ' of ' + filteredTables.length + ' tables'"></span>
@@ -937,43 +1131,52 @@
                         
                         <!-- Table Image -->
                         <div class="relative">
-                            <img :src="selectedTable?.images && selectedTable?.images.length > 0 ? selectedTable.images[0] : 'https://via.placeholder.com/600x400?text=Ocean+View+Resort'" 
+                            <img :src="selectedTable?.images && selectedTable?.images.length > 0 ? selectedTable.images[0] : 'https://via.placeholder.com/600x400?text=Ocean+View+Resort+Table'" 
                                  class="table-detail-image"
                                  alt="Selected Table">
-                            <span class="absolute top-2 left-2 bg-[#0284a8] text-white px-3 py-1 rounded-full text-xs font-semibold">
-                                <i class="fas fa-utensils mr-1"></i>
-                                <span x-text="'Table ' + selectedTable?.tableNo"></span>
+                            <span class="absolute top-2 left-2 bg-[#d4a373] text-white px-3 py-1 rounded-full text-xs font-semibold">
+                                <i class="fas fa-hashtag mr-1"></i>
+                                <span x-text="selectedTable?.tablePrefix + ' - ' + selectedTable?.tableNo"></span>
                             </span>
                         </div>
                         
                         <!-- Table Info -->
-                        <div class="bg-[#f8fafc] p-4 rounded-xl">
+                        <div class="bg-[#fff9f0] p-4 rounded-xl">
                             <div class="flex justify-between items-start mb-3">
                                 <div>
-                                    <h3 class="text-xl font-bold text-[#1e3c5c]" x-text="'Table ' + selectedTable?.tableNo"></h3>
+                                    <h3 class="text-xl font-bold text-[#1e3c5c]" x-text="selectedTable?.tableNo"></h3>
                                     <p class="text-sm text-[#3a5a78]" x-text="selectedTable?.description || 'No description available'"></p>
                                 </div>
-                                <span class="location-badge-enhanced text-xs"
+                                <span class="location-badge-enhanced"
                                       :class="{
-                                          'first-floor': selectedTable?.locationName === '1st Floor',
-                                          'second-floor': selectedTable?.locationName === '2nd Floor',
-                                          'beachside': selectedTable?.locationName === 'Beachside',
-                                          'poolside': selectedTable?.locationName === 'Poolside',
-                                          'rooftop': selectedTable?.locationName === 'Rooftop',
-                                          'garden': selectedTable?.locationName === 'Garden'
+                                          'first-floor': (selectedTable?.locationName || '').toLowerCase() === '1st floor',
+                                          'second-floor': (selectedTable?.locationName || '').toLowerCase() === '2nd floor',
+                                          'beachside': (selectedTable?.locationName || '').toLowerCase() === 'beachside',
+                                          'poolside': (selectedTable?.locationName || '').toLowerCase() === 'poolside',
+                                          'rooftop': (selectedTable?.locationName || '').toLowerCase() === 'rooftop',
+                                          'garden': (selectedTable?.locationName || '').toLowerCase() === 'garden'
                                       }">
-                                    <span x-text="selectedTable?.locationName || 'Indoor'"></span>
+                                    <span x-text="selectedTable?.locationName || 'Standard'"></span>
                                 </span>
                             </div>
                             
                             <div class="grid grid-cols-2 gap-3 mt-3">
                                 <div class="flex items-center gap-2 text-sm">
-                                    <i class="fas fa-users text-[#0284a8]"></i>
-                                    <span x-text="'Capacity: ' + selectedTable?.capacity + ' ' + (selectedTable?.capacity === 1 ? 'person' : 'persons')"></span>
+                                    <i class="fas fa-users text-[#d4a373]"></i>
+                                    <span x-text="'Capacity: ' + (selectedTable?.capacity || '0') + ' ' + ((selectedTable?.capacity || 0) === 1 ? 'person' : 'persons')"></span>
                                 </div>
                                 <div class="flex items-center gap-2 text-sm">
-                                    <i class="fas fa-map-marker-alt text-[#0284a8]"></i>
-                                    <span x-text="selectedTable?.locationName || 'Indoor'"></span>
+                                    <i class="fas fa-tag text-[#d4a373]"></i>
+                                    <span x-text="'Min spend: $' + (selectedTable?.minimumSpend || '0')"></span>
+                                </div>
+                            </div>
+                            
+                            <!-- Location Details -->
+                            <div class="mt-4">
+                                <p class="text-sm font-semibold text-[#1e3c5c] mb-2">Location Details:</p>
+                                <div class="flex items-center gap-2">
+                                    <i class="fas fa-map-pin text-[#d4a373]"></i>
+                                    <span class="text-sm" x-text="selectedTable?.locationName || 'Standard'"></span>
                                 </div>
                             </div>
                         </div>
@@ -994,7 +1197,18 @@
                                        x-model="bookingDetails.date"
                                        placeholder="Select date"
                                        class="booking-input"
+                                       :class="{
+                                           'unavailable': bookingDetails.date && !bookingDetails.isAvailable,
+                                           'available': bookingDetails.date && bookingDetails.isAvailable
+                                       }"
                                        readonly>
+                            </div>
+                            
+                            <!-- Availability Warning -->
+                            <div x-show="!bookingDetails.isAvailable && bookingDetails.date" 
+                                 class="availability-warning mt-2">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>This table is not available for the selected date. Please choose a different date.</span>
                             </div>
                         </div>
                         
@@ -1003,38 +1217,31 @@
                             <label class="block text-sm font-semibold text-[#1e3c5c] mb-2">
                                 <i class="fas fa-clock mr-2 text-[#d4a373]"></i>Select Time
                             </label>
-                            <select x-model="bookingDetails.time" class="time-select">
-                                <option value="11:00">11:00 AM</option>
-                                <option value="11:30">11:30 AM</option>
-                                <option value="12:00">12:00 PM</option>
-                                <option value="12:30">12:30 PM</option>
-                                <option value="13:00">1:00 PM</option>
-                                <option value="13:30">1:30 PM</option>
-                                <option value="14:00">2:00 PM</option>
-                                <option value="18:00">6:00 PM</option>
-                                <option value="18:30">6:30 PM</option>
-                                <option value="19:00">7:00 PM</option>
-                                <option value="19:30">7:30 PM</option>
-                                <option value="20:00">8:00 PM</option>
-                                <option value="20:30">8:30 PM</option>
-                                <option value="21:00">9:00 PM</option>
-                            </select>
-                        </div>
-                        
-                        <!-- Number of Guests -->
-                        <div>
-                            <label class="block text-sm font-semibold text-[#1e3c5c] mb-2">
-                                <i class="fas fa-user-friends mr-2 text-[#d4a373]"></i>Number of Guests
-                            </label>
-                            <input type="number" 
-                                   x-model="bookingDetails.guests"
-                                   min="1"
-                                   :max="selectedTable?.capacity"
-                                   class="booking-input">
+                            <div class="time-picker-container">
+                                <input type="text" 
+                                       x-ref="bookingTime"
+                                       x-model="bookingDetails.time"
+                                       placeholder="Select time"
+                                       class="time-input">
+                            </div>
                             <p class="text-xs text-[#3a5a78] mt-1">
                                 <i class="far fa-info-circle mr-1"></i>
-                                Maximum capacity: <span x-text="selectedTable?.capacity"></span> persons
+                                Standard dining time: 2 hours
                             </p>
+                        </div>
+                        
+                        <!-- Party Size -->
+                        <div>
+                            <label class="block text-sm font-semibold text-[#1e3c5c] mb-2">
+                                <i class="fas fa-users mr-2 text-[#d4a373]"></i>Party Size
+                            </label>
+                            <select x-model="bookingDetails.partySize" 
+                                    class="booking-input"
+                                    :disabled="!selectedTable">
+                                <template x-for="i in (selectedTable?.capacity || 10)" :key="i">
+                                    <option :value="i" x-text="i + ' ' + (i === 1 ? 'person' : 'persons')"></option>
+                                </template>
+                            </select>
                         </div>
                         
                         <!-- Special Requests -->
@@ -1044,8 +1251,22 @@
                             </label>
                             <textarea x-model="bookingDetails.specialRequests" 
                                       rows="3"
-                                      placeholder="Any special requests? (e.g., dietary requirements, anniversary, etc.)"
+                                      placeholder="Any special requests? (e.g., dietary requirements, occasion, etc.)"
                                       class="booking-input"></textarea>
+                        </div>
+                        
+                        <!-- Minimum Spend Notice -->
+                        <div class="total-price">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm text-[#3a5a78]">Minimum spend:</span>
+                                <span class="font-semibold">$<span x-text="selectedTable?.minimumSpend || '0'"></span></span>
+                            </div>
+                            <div class="border-t border-[#d4a373] border-opacity-30 my-2 pt-2">
+                                <p class="text-xs text-[#3a5a78] text-center">
+                                    <i class="fas fa-info-circle mr-1"></i>
+                                    This is the minimum spend requirement for this table
+                                </p>
+                            </div>
                         </div>
                         
                         <!-- Action Buttons -->
@@ -1053,16 +1274,19 @@
                             <button @click="closeBookingModal()" class="cancel-btn">
                                 <i class="fas fa-times mr-2"></i>Cancel
                             </button>
-                            <button @click="confirmBooking()" class="confirm-btn">
-                                <i class="fas fa-check-circle mr-2"></i>Confirm Booking
+                            <button @click="confirmBooking()" 
+                                    class="confirm-btn"
+                                    :disabled="!bookingDetails.isAvailable || !bookingDetails.date || !bookingDetails.time || !bookingDetails.partySize || bookingDetails.checkingAvailability || selectedTable?.status === 'maintenance'">
+                                <i class="fas" :class="bookingDetails.checkingAvailability ? 'fa-spinner fa-spin' : 'fa-check-circle'"></i>
+                                <span x-text="bookingDetails.checkingAvailability ? 'Checking...' : 'Confirm Booking'"></span>
                             </button>
                         </div>
                         
-                        <!-- Test Mode Notice -->
-                        <div class="text-center mt-4">
-                            <span class="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 text-xs px-3 py-1.5 rounded-full">
-                                <i class="fas fa-flask"></i>
-                                Test Mode - Frontend Demo Only
+                        <!-- Maintenance Notice -->
+                        <div x-show="selectedTable?.status === 'maintenance'" class="text-center mt-2">
+                            <span class="inline-flex items-center gap-2 bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded-full">
+                                <i class="fas fa-tools"></i>
+                                This table is under maintenance and cannot be booked
                             </span>
                         </div>
                     </div>
@@ -1075,304 +1299,550 @@
     <jsp:include page="component/footer.jsp" />
 
     <script>
-        function tableBooking() {
-            return {
-                // User data from login
-                isLoggedIn: false,
-                userId: null,
-                userName: '',
-                userEmail: '',
-                userRegNo: '',
-                userType: '',
-                authToken: '',
-                
-                // Data properties
-                tables: [],
-                filteredTables: [],
-                locations: [],
-                loading: true,
-                
-                // Filters
-                filters: {
-                    locationId: 'all',
-                    capacity: 'all',
-                    status: 'all',
-                    sortBy: 'recommended'
-                },
-                
-                // Pagination
-                currentPage: 1,
-                itemsPerPage: 6,
-                
-                // Modal
-                showBookingModal: false,
-                selectedTable: null,
-                
-                // Booking Details
-                bookingDetails: {
-                    date: '',
-                    time: '19:00',
-                    guests: 2,
-                    specialRequests: ''
-                },
-                
-                init() {
-                    // Load user data from storage
-                    this.loadUserData();
+function tableBooking() {
+    return {
+        // User data from login
+        isLoggedIn: false,
+        userId: null,
+        userName: '',
+        userEmail: '',
+        userRegNo: '',
+        userType: '',
+        
+        // Data properties
+        tables: [],
+        filteredTables: [],
+        locations: [],
+        loading: true,
+        unavailableDates: [], // Store unavailable dates for the selected table
+        unavailableTimes: [], // Store unavailable times for the selected date
+        
+        // Filters
+        filters: {
+            locationId: 'all',
+            capacity: 'all',
+            date: '',
+            sortBy: 'recommended'
+        },
+        
+        // Pagination
+        currentPage: 1,
+        itemsPerPage: 6,
+        
+        // Modal
+        showBookingModal: false,
+        selectedTable: null,
+        datePickersInitialized: false,
+        flatpickrInstances: {
+            dateFilter: null,
+            bookingDate: null,
+            bookingTime: null
+        },
+        
+        // Booking Details
+        bookingDetails: {
+            date: '',
+            time: '',
+            partySize: 2,
+            specialRequests: '',
+            isAvailable: true,
+            checkingAvailability: false
+        },
+        
+        init() {
+            // Load user data from storage
+            this.loadUserData();
+            
+            this.loadLocations();
+            this.loadTables();
+            
+            // Reset to first page when filters change
+            this.$watch('filteredTables', () => {
+                this.currentPage = 1;
+            });
+        },
+        
+        loadUserData() {
+            // Check localStorage first (persistent login)
+            this.userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+            this.userName = localStorage.getItem('userName') || sessionStorage.getItem('userName');
+            this.userEmail = localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail');
+            this.userRegNo = localStorage.getItem('userRegNo') || sessionStorage.getItem('userRegNo');
+            this.userType = localStorage.getItem('userType') || sessionStorage.getItem('userType');
+            
+            this.isLoggedIn = !!(this.userId);
+            
+            if (this.isLoggedIn) {
+                console.log('User logged in:', this.userName, 'Type:', this.userType);
+            }
+        },
+        
+        loadLocations() {
+            fetch('${pageContext.request.contextPath}/tablelocation/api/list')
+                .then(response => response.json())
+                .then(data => {
+                    this.locations = Array.isArray(data) ? data : [];
+                })
+                .catch(error => {
+                    console.error('Error loading locations:', error);
+                    this.locations = [];
+                });
+        },
+        
+        loadTables() {
+            this.loading = true;
+            
+            fetch('${pageContext.request.contextPath}/managetables/api/list')
+                .then(response => response.json())
+                .then(data => {
+                    // Show ALL tables, regardless of status
+                    this.tables = Array.isArray(data) ? data : [];
                     
-                    this.loadLocations();
-                    this.loadTables();
-                    
-                    // Reset to first page when filters change
-                    this.$watch('filteredTables', () => {
-                        this.currentPage = 1;
-                    });
-                },
-                
-                loadUserData() {
-                    // Check localStorage first (persistent login)
-                    this.authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-                    this.userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
-                    this.userName = localStorage.getItem('userName') || sessionStorage.getItem('userName');
-                    this.userEmail = localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail');
-                    this.userRegNo = localStorage.getItem('userRegNo') || sessionStorage.getItem('userRegNo');
-                    this.userType = localStorage.getItem('userType') || sessionStorage.getItem('userType');
-                    
-                    this.isLoggedIn = !!(this.authToken && this.userId);
-                    
-                    if (this.isLoggedIn) {
-                        console.log('User logged in:', this.userName, 'Type:', this.userType);
-                    }
-                },
-                
-                loadLocations() {
-                    fetch('${pageContext.request.contextPath}/tablelocation/api/list')
-                        .then(response => response.json())
-                        .then(data => {
-                            this.locations = Array.isArray(data) ? data : [];
-                        })
-                        .catch(error => {
-                            console.error('Error loading locations:', error);
-                            this.locations = [];
-                        });
-                },
-                
-                loadTables() {
-                    this.loading = true;
-                    
-                    fetch('${pageContext.request.contextPath}/managetables/api/list')
-                        .then(response => response.json())
-                        .then(data => {
-                            // Only show available tables
-                            this.tables = Array.isArray(data) ? data.filter(table => table.status === 'available') : [];
-                            this.applyFilters();
-                            this.loading = false;
-                        })
-                        .catch(error => {
-                            console.error('Error loading tables:', error);
-                            this.tables = [];
-                            this.filteredTables = [];
-                            this.loading = false;
-                            
-                            if (window.showError) {
-                                window.showError('Failed to load tables', 3000);
-                            }
-                        });
-                },
-                
-                applyFilters() {
-                    let filtered = [...this.tables];
-                    
-                    // Filter by location
-                    if (this.filters.locationId !== 'all') {
-                        filtered = filtered.filter(table => table.locationId == this.filters.locationId);
-                    }
-                    
-                    // Filter by capacity
-                    if (this.filters.capacity !== 'all') {
-                        const capacityValue = parseInt(this.filters.capacity);
-                        if (capacityValue === 12) {
-                            filtered = filtered.filter(table => table.capacity >= 12);
-                        } else {
-                            filtered = filtered.filter(table => table.capacity >= capacityValue);
+                    // Add minimumSpend property if not present (for demo purposes)
+                    this.tables.forEach(table => {
+                        if (!table.minimumSpend) {
+                            // Generate random minimum spend based on capacity and location
+                            const baseSpend = 50;
+                            const capacityMultiplier = table.capacity || 2;
+                            const locationMultiplier = table.locationName === 'Beachside' ? 2 : 
+                                                       table.locationName === 'Rooftop' ? 1.8 :
+                                                       table.locationName === 'Poolside' ? 1.5 : 1;
+                            table.minimumSpend = Math.round(baseSpend * capacityMultiplier * locationMultiplier);
                         }
-                    }
+                    });
                     
-                    // Filter by status (only available)
-                    if (this.filters.status !== 'all') {
-                        filtered = filtered.filter(table => table.status === 'available');
-                    }
-                    
-                    // Apply sorting
-                    switch(this.filters.sortBy) {
-                        case 'capacity_low':
-                            filtered.sort((a, b) => (a.capacity || 0) - (b.capacity || 0));
-                            break;
-                        case 'capacity_high':
-                            filtered.sort((a, b) => (b.capacity || 0) - (a.capacity || 0));
-                            break;
-                        default:
-                            // Recommended: sort by capacity (low to high) as default
-                            filtered.sort((a, b) => (a.capacity || 0) - (b.capacity || 0));
-                    }
-                    
-                    this.filteredTables = filtered;
-                },
-                
-                clearFilters() {
-                    this.filters = {
-                        locationId: 'all',
-                        capacity: 'all',
-                        status: 'all',
-                        sortBy: 'recommended'
-                    };
                     this.applyFilters();
+                    this.loading = false;
+                })
+                .catch(error => {
+                    console.error('Error loading tables:', error);
+                    this.tables = [];
+                    this.filteredTables = [];
+                    this.loading = false;
                     
-                    if (window.showInfo) {
-                        window.showInfo('Filters cleared', 2000);
+                    if (window.showError) {
+                        window.showError('Failed to load tables', 3000);
                     }
-                },
-                
-                // Pagination methods
-                get paginatedTables() {
-                    let start = (this.currentPage - 1) * this.itemsPerPage;
-                    let end = start + this.itemsPerPage;
-                    return this.filteredTables.slice(start, end);
-                },
-                
-                get totalPages() {
-                    return Math.ceil(this.filteredTables.length / this.itemsPerPage);
-                },
-                
-                prevPage() {
-                    if (this.currentPage > 1) this.currentPage--;
-                },
-                
-                nextPage() {
-                    if (this.currentPage < this.totalPages) this.currentPage++;
-                },
-                
-                goToPage(page) {
-                    this.currentPage = page;
-                },
-                
-                // Modal methods
-                openBookingModal(table) {
-                    if (!this.isLoggedIn) {
-                        // Show message and redirect to login if not logged in
-                        if (window.showInfo) {
-                            window.showInfo('Please login to book a table', 3000);
-                        }
-                        setTimeout(() => {
-                            window.location.href = '${pageContext.request.contextPath}/login.jsp?redirect=booktable';
-                        }, 1500);
-                        return;
-                    }
+                });
+        },
+        
+        loadUnavailableDates(tableId) {
+            return fetch('${pageContext.request.contextPath}/tablebookings/api/available-dates?tableId=' + tableId)
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to fetch bookings');
+                    return response.json();
+                })
+                .then(bookings => {
+                    console.log('Bookings for table', tableId, ':', bookings);
                     
-                    this.selectedTable = table;
-                    this.showBookingModal = true;
+                    // Clear previous unavailable dates
+                    this.unavailableDates = [];
                     
-                    // Reset booking details
-                    this.resetBookingDetails();
-                    
-                    // Initialize date picker after modal is shown
-                    setTimeout(() => {
-                        this.initDatePicker();
-                    }, 100);
-                },
-                
-                closeBookingModal() {
-                    this.showBookingModal = false;
-                    this.selectedTable = null;
-                    this.resetBookingDetails();
-                },
-                
-                resetBookingDetails() {
-                    this.bookingDetails = {
-                        date: '',
-                        time: '19:00',
-                        guests: 2,
-                        specialRequests: ''
-                    };
-                },
-                
-                initDatePicker() {
-                    if (!this.$refs.bookingDate) return;
-                    
-                    const today = new Date();
-                    
-                    flatpickr(this.$refs.bookingDate, {
-                        minDate: 'today',
-                        dateFormat: 'Y-m-d',
-                        defaultDate: today,
-                        onChange: (selectedDates, dateStr) => {
-                            this.bookingDetails.date = dateStr;
+                    bookings.forEach(booking => {
+                        console.log('Processing booking:', booking.bookingDate);
+                        
+                        // Parse date
+                        const dateStr = booking.bookingDate; // YYYY-MM-DD
+                        
+                        // Add to unavailable dates
+                        if (dateStr && !this.unavailableDates.includes(dateStr)) {
+                            this.unavailableDates.push(dateStr);
                         }
                     });
                     
-                    // Set initial date
-                    this.bookingDetails.date = this.formatDate(today);
-                },
+                    console.log('Final unavailable dates for table', tableId, ':', this.unavailableDates);
+                    return Promise.resolve();
+                })
+                .catch(error => {
+                    console.error('Error loading unavailable dates:', error);
+                    this.unavailableDates = [];
+                    return Promise.resolve();
+                });
+        },
+        
+        loadUnavailableTimes(tableId, date) {
+            return fetch('${pageContext.request.contextPath}/tablebookings/api/available-times?tableId=' + tableId + '&date=' + date)
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to fetch bookings');
+                    return response.json();
+                })
+                .then(bookedTimes => {
+                    console.log('Booked times for table', tableId, 'on', date, ':', bookedTimes);
+                    
+                    // Store unavailable times
+                    this.unavailableTimes = bookedTimes || [];
+                    
+                    return Promise.resolve();
+                })
+                .catch(error => {
+                    console.error('Error loading unavailable times:', error);
+                    this.unavailableTimes = [];
+                    return Promise.resolve();
+                });
+        },
+
+        isDateUnavailable(dateStr) {
+            return this.unavailableDates.includes(dateStr);
+        },
+        
+        isTimeUnavailable(timeStr) {
+            return this.unavailableTimes.includes(timeStr);
+        },
+        
+        applyFilters() {
+            let filtered = [...this.tables];
+            
+            // Filter by location
+            if (this.filters.locationId !== 'all') {
+                filtered = filtered.filter(table => table.locationId == this.filters.locationId);
+            }
+            
+            // Filter by capacity
+            if (this.filters.capacity !== 'all') {
+                const capacityValue = parseInt(this.filters.capacity);
+                if (capacityValue === 12) {
+                    filtered = filtered.filter(table => (table.capacity || 0) >= 12);
+                } else {
+                    filtered = filtered.filter(table => (table.capacity || 0) >= capacityValue);
+                }
+            }
+            
+            // Apply sorting
+            switch(this.filters.sortBy) {
+                case 'capacity_low':
+                    filtered.sort((a, b) => (a.capacity || 0) - (b.capacity || 0));
+                    break;
+                case 'capacity_high':
+                    filtered.sort((a, b) => (b.capacity || 0) - (a.capacity || 0));
+                    break;
+                default:
+                    // Recommended: sort by capacity then location
+                    filtered.sort((a, b) => {
+                        if (a.capacity === b.capacity) {
+                            return (a.locationName || '').localeCompare(b.locationName || '');
+                        }
+                        return (a.capacity || 0) - (b.capacity || 0);
+                    });
+            }
+            
+            this.filteredTables = filtered;
+        },
+        
+        clearFilters() {
+            this.filters = {
+                locationId: 'all',
+                capacity: 'all',
+                date: '',
+                sortBy: 'recommended'
+            };
+            
+            // Clear date filter picker
+            if (this.flatpickrInstances.dateFilter) {
+                this.flatpickrInstances.dateFilter.clear();
+            }
+            
+            this.applyFilters();
+            
+            if (window.showInfo) {
+                window.showInfo('Filters cleared', 2000);
+            }
+        },
+        
+        // Pagination methods
+        get paginatedTables() {
+            let start = (this.currentPage - 1) * this.itemsPerPage;
+            let end = start + this.itemsPerPage;
+            return this.filteredTables.slice(start, end);
+        },
+        
+        get totalPages() {
+            return Math.ceil(this.filteredTables.length / this.itemsPerPage);
+        },
+        
+        prevPage() {
+            if (this.currentPage > 1) this.currentPage--;
+        },
+        
+        nextPage() {
+            if (this.currentPage < this.totalPages) this.currentPage++;
+        },
+        
+        goToPage(page) {
+            this.currentPage = page;
+        },
+        
+        // Modal methods
+        async openBookingModal(table) {
+            if (!this.isLoggedIn) {
+                if (window.showInfo) {
+                    window.showInfo('Please login to book a table', 3000);
+                }
+                setTimeout(() => {
+                    window.location.href = '${pageContext.request.contextPath}/login.jsp?redirect=booktable';
+                }, 1500);
+                return;
+            }
+            
+            if (table.status === 'maintenance') {
+                if (window.showError) {
+                    window.showError('This table is under maintenance and cannot be booked', 3000);
+                }
+                return;
+            }
+            
+            this.selectedTable = table;
+            this.showBookingModal = true;
+            this.datePickersInitialized = false;
+            
+            this.destroyFlatpickrInstances();
+            this.resetBookingDetails();
+            
+            // Set default party size to table capacity or 2
+            this.bookingDetails.partySize = Math.min(table.capacity || 10, 2);
+            
+            await this.loadUnavailableDates(table.id);
+            
+            setTimeout(() => {
+                this.initDatePickers();
+                this.initTimePicker();
+            }, 300);
+        },
+        
+        destroyFlatpickrInstances() {
+            if (this.flatpickrInstances.dateFilter) {
+                this.flatpickrInstances.dateFilter.destroy();
+                this.flatpickrInstances.dateFilter = null;
+            }
+            if (this.flatpickrInstances.bookingDate) {
+                this.flatpickrInstances.bookingDate.destroy();
+                this.flatpickrInstances.bookingDate = null;
+            }
+            if (this.flatpickrInstances.bookingTime) {
+                this.flatpickrInstances.bookingTime.destroy();
+                this.flatpickrInstances.bookingTime = null;
+            }
+        },
+        
+        closeBookingModal() {
+            this.showBookingModal = false;
+            this.selectedTable = null;
+            this.unavailableDates = [];
+            this.unavailableTimes = [];
+            this.datePickersInitialized = false;
+            this.destroyFlatpickrInstances();
+        },
+        
+        resetBookingDetails() {
+            this.bookingDetails = {
+                date: '',
+                time: '',
+                partySize: 2,
+                specialRequests: '',
+                isAvailable: true,
+                checkingAvailability: false
+            };
+        },
+        
+        initDatePickers() {
+            // Initialize date filter picker if it exists
+            if (this.$refs.dateFilter && !this.flatpickrInstances.dateFilter) {
+                this.flatpickrInstances.dateFilter = flatpickr(this.$refs.dateFilter, {
+                    minDate: 'today',
+                    dateFormat: 'Y-m-d',
+                    onChange: (selectedDates, dateStr) => {
+                        this.filters.date = dateStr;
+                        this.applyFilters();
+                    }
+                });
+            }
+            
+            // Initialize booking date picker
+            if (this.$refs.bookingDate && !this.flatpickrInstances.bookingDate) {
+                console.log('Initializing booking date picker');
+                console.log('Unavailable dates:', this.unavailableDates);
                 
-                formatDate(date) {
-                    const year = date.getFullYear();
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const day = String(date.getDate()).padStart(2, '0');
-                    return `${year}-${month}-${day}`;
+                // Create array of disabled dates
+                const disabledDates = this.unavailableDates && this.unavailableDates.length > 0 
+                    ? this.unavailableDates 
+                    : [];
+
+                this.flatpickrInstances.bookingDate = flatpickr(this.$refs.bookingDate, {
+                    minDate: 'today',
+                    dateFormat: 'Y-m-d',
+                    disable: disabledDates,
+                    onChange: (selectedDates, dateStr) => {
+                        console.log('Booking date changed:', dateStr);
+                        this.bookingDetails.date = dateStr;
+                        this.bookingDetails.time = ''; // Reset time when date changes
+                        
+                        // Load unavailable times for this date
+                        if (dateStr && this.selectedTable) {
+                            this.loadUnavailableTimes(this.selectedTable.id, dateStr).then(() => {
+                                this.checkAvailability();
+                                
+                                // Update time picker with unavailable times
+                                if (this.flatpickrInstances.bookingTime) {
+                                    this.flatpickrInstances.bookingTime.set('disable', this.getDisabledTimes());
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        },
+        
+        getDisabledTimes() {
+            // Return array of disabled time strings
+            return this.unavailableTimes || [];
+        },
+        
+        initTimePicker() {
+            if (!this.$refs.bookingTime) return;
+            
+            if (this.flatpickrInstances.bookingTime) {
+                this.flatpickrInstances.bookingTime.destroy();
+            }
+            
+            // Generate time options (every 30 minutes from 11:00 to 22:00)
+            const timeOptions = [];
+            for (let hour = 11; hour <= 22; hour++) {
+                for (let minute = 0; minute < 60; minute += 30) {
+                    if (hour === 22 && minute > 0) continue; // Last booking at 22:00
+                    const timeStr = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+                    timeOptions.push(timeStr);
+                }
+            }
+            
+            this.flatpickrInstances.bookingTime = flatpickr(this.$refs.bookingTime, {
+                enableTime: true,
+                noCalendar: true,
+                dateFormat: "H:i",
+                time_24hr: true,
+                minuteIncrement: 30,
+                minTime: "11:00",
+                maxTime: "22:00",
+                disable: this.getDisabledTimes(),
+                onChange: (selectedDates, timeStr) => {
+                    console.log('Booking time changed:', timeStr);
+                    this.bookingDetails.time = timeStr;
+                    this.checkAvailability();
+                }
+            });
+        },
+        
+        checkAvailability() {
+            if (!this.selectedTable || !this.bookingDetails.date || !this.bookingDetails.time) {
+                this.bookingDetails.isAvailable = false;
+                return;
+            }
+            
+            // Check if date is unavailable
+            if (this.isDateUnavailable(this.bookingDetails.date)) {
+                this.bookingDetails.isAvailable = false;
+                return;
+            }
+            
+            // Check if time is unavailable
+            if (this.isTimeUnavailable(this.bookingDetails.time)) {
+                this.bookingDetails.isAvailable = false;
+                return;
+            }
+            
+            this.bookingDetails.isAvailable = true;
+        },
+        
+        confirmBooking() {
+            if (!this.bookingDetails.date) {
+                if (window.showError) {
+                    window.showError('Please select a date', 3000);
+                }
+                return;
+            }
+            
+            if (!this.bookingDetails.time) {
+                if (window.showError) {
+                    window.showError('Please select a time', 3000);
+                }
+                return;
+            }
+            
+            if (!this.bookingDetails.partySize) {
+                if (window.showError) {
+                    window.showError('Please select party size', 3000);
+                }
+                return;
+            }
+            
+            if (!this.bookingDetails.isAvailable) {
+                if (window.showError) {
+                    window.showError('This table is not available for the selected date and time', 3000);
+                }
+                return;
+            }
+            
+            if (this.selectedTable.status === 'maintenance') {
+                if (window.showError) {
+                    window.showError('This table is under maintenance and cannot be booked', 3000);
+                }
+                return;
+            }
+            
+            const bookingData = {
+                tableId: parseInt(this.selectedTable.id),
+                guestId: parseInt(this.userId),
+                bookingDate: this.bookingDetails.date,
+                bookingTime: this.bookingDetails.time + ':00',
+                partySize: parseInt(this.bookingDetails.partySize),
+                specialRequests: this.bookingDetails.specialRequests || ''
+            };
+            
+            if (window.showInfo) {
+                window.showInfo('Processing your booking...', 0);
+            }
+            
+            fetch('${pageContext.request.contextPath}/tablebookings/api/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
                 },
-                
-                confirmBooking() {
-                    if (!this.bookingDetails.date) {
-                        if (window.showError) {
-                            window.showError('Please select a date', 3000);
-                        }
-                        return;
-                    }
-                    
-                    if (!this.bookingDetails.time) {
-                        if (window.showError) {
-                            window.showError('Please select a time', 3000);
-                        }
-                        return;
-                    }
-                    
-                    if (!this.bookingDetails.guests || this.bookingDetails.guests < 1) {
-                        if (window.showError) {
-                            window.showError('Please enter number of guests', 3000);
-                        }
-                        return;
-                    }
-                    
-                    if (this.bookingDetails.guests > this.selectedTable.capacity) {
-                        if (window.showError) {
-                            window.showError('Number of guests exceeds table capacity', 3000);
-                        }
-                        return;
-                    }
-                    
-                    // Show success message (test mode)
+                body: JSON.stringify(bookingData)
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(errorData => {
+                        throw new Error(errorData.message || `Server error: ${response.status}`);
+                    }).catch(() => {
+                        throw new Error(`Server error: ${response.status}`);
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
                     if (window.showSuccess) {
-                        window.showSuccess('Table booked successfully! (Test Mode - This is just a demo)', 3000);
+                        window.showSuccess(data.message, 5000);
                     }
                     
-                    // Log booking details to console
-                    console.log('Table Booking Details:', {
-                        table: this.selectedTable,
-                        userId: this.userId,
-                        userName: this.userName,
-                        date: this.bookingDetails.date,
-                        time: this.bookingDetails.time,
-                        guests: this.bookingDetails.guests,
-                        specialRequests: this.bookingDetails.specialRequests
-                    });
-                    
-                    // Close modal
+                    this.loadTables();
+        
                     setTimeout(() => {
                         this.closeBookingModal();
                     }, 2000);
+                } else {
+                    if (window.showError) {
+                        window.showError(data.message, 5000);
+                    }
                 }
-            }
+            })
+            .catch(error => {
+                console.error('Error creating booking:', error);
+                if (window.showError) {
+                    window.showError(error.message || 'Failed to create booking. Please try again.', 3000);
+                }
+            });
         }
+    }
+}
     </script>
 </body>
 </html>

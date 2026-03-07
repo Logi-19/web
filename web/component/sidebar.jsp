@@ -38,11 +38,11 @@
                     <img src="https://cdn-icons-png.flaticon.com/128/5140/5140130.png" alt="rooms" class="w-4 h-4">
                     <span>Rooms</span>
                 </a>
-                <a href="#" class="flex items-center gap-4 px-4 py-2.5 rounded-lg text-[#1e3c5c]/70 hover:bg-[#b5e5e0]/20 text-sm">
+                <a href="booktabledetails.jsp" class="flex items-center gap-4 px-4 py-2.5 rounded-lg text-[#1e3c5c]/70 hover:bg-[#b5e5e0]/20 text-sm">
                     <img src="https://cdn-icons-png.flaticon.com/128/1012/1012472.png" alt="tables" class="w-4 h-4">
                     <span>Tables</span>
                 </a>
-                <a href="#" class="flex items-center gap-4 px-4 py-2.5 rounded-lg text-[#1e3c5c]/70 hover:bg-[#b5e5e0]/20 text-sm">
+                <a href="bookservicedetails.jsp" class="flex items-center gap-4 px-4 py-2.5 rounded-lg text-[#1e3c5c]/70 hover:bg-[#b5e5e0]/20 text-sm">
                     <img src="https://cdn-icons-png.flaticon.com/128/10871/10871960.png" alt="services" class="w-4 h-4">
                     <span>Services</span>
                 </a>

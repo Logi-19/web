@@ -1,6 +1,6 @@
 <%-- 
-    Document   : tableactivity
-    Author     : kiru
+    Document   : serviceactivity
+    Author     : Based on bookactivity.jsp pattern
 --%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
@@ -9,7 +9,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Table Bookings · Ocean View Resort</title>
+    <title>My Service Bookings · Ocean View Resort</title>
     <!-- Tailwind via CDN + Inter font -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
@@ -20,7 +20,7 @@
     <style>
         * { font-family: 'Inter', system-ui, sans-serif; }
         
-        /* Status badges - warm colors for table booking */
+        /* Status badges */
         .status-badge {
             padding: 0.25rem 0.75rem;
             border-radius: 9999px;
@@ -42,14 +42,9 @@
             color: #1e40af;
         }
         
-        .status-seated {
+        .status-completed {
             background-color: #d1fae5;
             color: #065f46;
-        }
-        
-        .status-completed {
-            background-color: #e5e7eb;
-            color: #374151;
         }
         
         .status-cancelled {
@@ -63,8 +58,47 @@
         }
         
         .status-no_show {
-            background-color: #f1f5f9;
-            color: #475569;
+            background-color: #f3e8ff;
+            color: #6b21a8;
+        }
+        
+        /* Category badges */
+        .category-badge {
+            padding: 0.2rem 0.5rem;
+            border-radius: 9999px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        .category-spa {
+            background-color: #e6f0fa;
+            color: #2c5282;
+        }
+        
+        .category-massage {
+            background-color: #e6f7e6;
+            color: #27632e;
+        }
+        
+        .category-ayurveda {
+            background-color: #f3e5f5;
+            color: #6a1b9a;
+        }
+        
+        .category-beauty {
+            background-color: #fff3e0;
+            color: #b85d1a;
+        }
+        
+        .category-yoga {
+            background-color: #ffe5e5;
+            color: #b71c1c;
+        }
+        
+        .category-fitness {
+            background-color: #e0f2fe;
+            color: #0369a1;
         }
         
         /* Action buttons */
@@ -93,18 +127,40 @@
         }
         
         .action-btn.view {
-            background-color: #fef3c7;
-            color: #d4a373;
+            background-color: #dbeafe;
+            color: #2563eb;
         }
         
         .action-btn.view:hover {
-            background-color: #fde68a;
+            background-color: #bfdbfe;
         }
         
         .action-btn.disabled {
             opacity: 0.5;
             cursor: not-allowed;
             pointer-events: none;
+        }
+        
+        /* Duration pill */
+        .duration-pill {
+            background-color: #f0f7fa;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.7rem;
+            color: #0284a8;
+            font-weight: 600;
+            display: inline-block;
+        }
+        
+        /* Free badge */
+        .free-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            display: inline-block;
         }
         
         /* Table styles */
@@ -128,7 +184,7 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
             padding: 1rem 0.75rem;
-            border-bottom: 2px solid #d4a373;
+            border-bottom: 2px solid #e2e8f0;
             text-align: left;
             white-space: nowrap;
         }
@@ -144,7 +200,7 @@
         }
         
         tr:hover td {
-            background-color: #fff9f0;
+            background-color: #f8fafc;
         }
         
         /* Modal styles */
@@ -166,7 +222,7 @@
         .modal-content {
             background: white;
             border-radius: 1.5rem;
-            max-width: 500px;
+            max-width: 550px;
             width: 100%;
             max-height: 90vh;
             overflow-y: auto;
@@ -209,6 +265,19 @@
             transform: rotate(90deg);
         }
         
+        /* Service icon */
+        .service-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #d4a373, #b85d1a);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        
         /* Empty state */
         .empty-state {
             text-align: center;
@@ -220,7 +289,7 @@
         
         /* Loading skeleton */
         .skeleton {
-            background: linear-gradient(90deg, #fff9f0 25%, #e2e8f0 50%, #fff9f0 75%);
+            background: linear-gradient(90deg, #f0f7fa 25%, #e2e8f0 50%, #f0f7fa 75%);
             background-size: 200% 100%;
             animation: loading 1.5s infinite;
             border-radius: 0.5rem;
@@ -231,49 +300,10 @@
             100% { background-position: -200% 0; }
         }
         
-        /* Location badge */
-        .location-badge {
-            padding: 0.25rem 0.5rem;
-            border-radius: 9999px;
-            font-size: 0.7rem;
-            font-weight: 500;
-            display: inline-block;
-        }
-        
-        .location-first-floor {
-            background-color: #dbeafe;
-            color: #1e3c5c;
-        }
-        
-        .location-second-floor {
-            background-color: #dcfce7;
-            color: #166534;
-        }
-        
-        .location-beachside {
-            background-color: #f3e8ff;
-            color: #6b21a8;
-        }
-        
-        .location-poolside {
-            background-color: #ffedd5;
-            color: #9a3412;
-        }
-        
-        .location-rooftop {
-            background-color: #ffe4e6;
-            color: #9f1239;
-        }
-        
-        .location-garden {
-            background-color: #ccfbf1;
-            color: #115e59;
-        }
-        
         [x-cloak] { display: none !important; }
     </style>
 </head>
-<body class="bg-[#fff9f0] text-[#1e3c5c] antialiased">
+<body class="bg-[#f0f7fa] text-[#1e3c5c] antialiased">
 
     <!-- Include Navbar -->
     <jsp:include page="component/navbar.jsp" />
@@ -282,15 +312,35 @@
     <jsp:include page="component/notification.jsp" />
 
     <!-- Main Content -->
-    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16" x-data="tableActivity()" x-init="init()">
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16" x-data="serviceActivity()" x-init="init()">
         
         <!-- Page Header -->
         <div class="mb-8">
             <h1 class="text-3xl md:text-4xl font-bold text-[#1e3c5c] flex items-center gap-3">
-                <i class="fas fa-utensils text-[#d4a373]"></i>
-                My Table Bookings
+                <i class="fas fa-spa text-[#0284a8]"></i>
+                My Service Bookings
             </h1>
-            <p class="text-[#3a5a78] mt-2">View and manage your restaurant reservations</p>
+            <p class="text-[#3a5a78] mt-2">View and manage your spa & wellness reservations</p>
+        </div>
+
+        <!-- Quick Stats -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-4">
+                <div class="text-2xl font-bold text-[#0284a8]" x-text="stats.upcoming"></div>
+                <div class="text-sm text-[#64748b]">Upcoming</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-4">
+                <div class="text-2xl font-bold text-yellow-600" x-text="stats.pending"></div>
+                <div class="text-sm text-[#64748b]">Pending</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-4">
+                <div class="text-2xl font-bold text-green-600" x-text="stats.completed"></div>
+                <div class="text-sm text-[#64748b]">Completed</div>
+            </div>
+            <div class="bg-white rounded-xl shadow-sm border border-[#e2e8f0] p-4">
+                <div class="text-2xl font-bold text-[#1e3c5c]" x-text="'LKR ' + formatPrice(stats.totalSpent)"></div>
+                <div class="text-sm text-[#64748b]">Total Spent</div>
+            </div>
         </div>
 
         <!-- Filters -->
@@ -299,11 +349,10 @@
                 <!-- Status Filter -->
                 <div>
                     <label class="block text-sm font-medium text-[#1e3c5c] mb-1">Filter by Status</label>
-                    <select x-model="statusFilter" @change="applyFilters()" class="w-full border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]">
+                    <select x-model="statusFilter" @change="applyFilters()" class="w-full border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                         <option value="all">All Bookings</option>
                         <option value="pending">Pending</option>
                         <option value="confirmed">Confirmed</option>
-                        <option value="seated">Seated</option>
                         <option value="completed">Completed</option>
                         <option value="cancelled">Cancelled</option>
                         <option value="rejected">Rejected</option>
@@ -317,7 +366,7 @@
                     <input type="date" 
                            x-model="dateFrom"
                            @change="applyFilters()"
-                           class="w-full border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]">
+                           class="w-full border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                 </div>
 
                 <div>
@@ -325,7 +374,7 @@
                     <input type="date" 
                            x-model="dateTo"
                            @change="applyFilters()"
-                           class="w-full border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]">
+                           class="w-full border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                 </div>
 
                 <!-- Search -->
@@ -334,8 +383,8 @@
                     <input type="text" 
                            x-model="searchQuery"
                            @input.debounce="applyFilters()"
-                           placeholder="Reservation # or Table No"
-                           class="w-full border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]">
+                           placeholder="Booking # or Service"
+                           class="w-full border border-[#e2e8f0] rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                 </div>
             </div>
 
@@ -353,12 +402,13 @@
             <table>
                 <thead>
                     <tr>
-                        <th>Reservation No</th>
-                        <th>Table</th>
-                        <th>Location</th>
-                        <th>Date</th>
-                        <th>Time</th>
-                        <th>Party Size</th>
+                        <th>Booking No</th>
+                        <th>Service</th>
+                        <th>Category</th>
+                        <th>Date & Time</th>
+                        <th>Guests</th>
+                        <th>Duration</th>
+                        <th>Total Price</th>
                         <th>Status</th>
                         <th>Booked On</th>
                         <th>Actions</th>
@@ -368,9 +418,9 @@
                     <!-- Loading State -->
                     <template x-if="loading">
                         <tr>
-                            <td colspan="9" class="text-center py-8">
+                            <td colspan="10" class="text-center py-8">
                                 <div class="flex justify-center">
-                                    <i class="fas fa-spinner fa-spin text-2xl text-[#d4a373]"></i>
+                                    <i class="fas fa-spinner fa-spin text-2xl text-[#0284a8]"></i>
                                 </div>
                             </td>
                         </tr>
@@ -379,14 +429,14 @@
                     <!-- No Bookings -->
                     <template x-if="!loading && filteredBookings.length === 0">
                         <tr>
-                            <td colspan="9" class="text-center py-12">
+                            <td colspan="10" class="text-center py-12">
                                 <div class="flex flex-col items-center">
-                                    <i class="fas fa-utensils text-5xl text-[#94a3b8] mb-3"></i>
-                                    <p class="text-[#64748b]">No table bookings found</p>
+                                    <i class="fas fa-spa text-5xl text-[#94a3b8] mb-3"></i>
+                                    <p class="text-[#64748b]">No service bookings found</p>
                                     <p class="text-sm text-[#94a3b8] mt-1">Try adjusting your filters</p>
-                                    <a href="${pageContext.request.contextPath}/booktable.jsp" 
-                                       class="mt-4 px-4 py-2 bg-[#d4a373] text-white rounded-lg hover:bg-[#b88b4a] transition text-sm">
-                                        Book a Table
+                                    <a href="${pageContext.request.contextPath}/bookservice.jsp" 
+                                       class="mt-4 px-4 py-2 bg-[#0284a8] text-white rounded-lg hover:bg-[#03738C] transition text-sm">
+                                        Book a Service
                                     </a>
                                 </div>
                             </td>
@@ -397,47 +447,49 @@
                     <template x-if="!loading && filteredBookings.length > 0">
                         <template x-for="booking in paginatedBookings" :key="booking.id">
                             <tr>
-                                <!-- Reservation No -->
+                                <!-- Booking No -->
                                 <td>
-                                    <span class="font-medium text-[#d4a373]" x-text="booking.reservationNo"></span>
+                                    <span class="font-medium text-[#0284a8]" x-text="booking.bookingNo"></span>
                                 </td>
                                 
-                                <!-- Table -->
+                                <!-- Service -->
                                 <td>
-                                    <div class="font-medium" x-text="booking.tableNo ? (booking.tablePrefix + ' - ' + booking.tableNo) : 'Table #' + booking.tableId"></div>
-                                    <div class="text-xs text-[#64748b]" x-text="'Capacity: ' + (booking.tableCapacity || booking.capacity || '?')"></div>
+                                    <div class="font-medium" x-text="booking.serviceTitle || 'Service #' + booking.serviceId"></div>
                                 </td>
                                 
-                                <!-- Location -->
+                                <!-- Category -->
                                 <td>
-                                    <span class="location-badge" 
-                                          :class="{
-                                              'location-first-floor': booking.locationName === '1st Floor',
-                                              'location-second-floor': booking.locationName === '2nd Floor',
-                                              'location-beachside': booking.locationName === 'Beachside',
-                                              'location-poolside': booking.locationName === 'Poolside',
-                                              'location-rooftop': booking.locationName === 'Rooftop',
-                                              'location-garden': booking.locationName === 'Garden'
-                                          }">
-                                        <span x-text="booking.locationName || 'Standard'"></span>
+                                    <span class="category-badge" 
+                                          :class="'category-' + getCategoryClass(booking.serviceCategoryName)">
+                                        <span x-text="booking.serviceCategoryName || 'Wellness'"></span>
                                     </span>
                                 </td>
                                 
-                                <!-- Date -->
-                                <td x-text="formatDate(booking.bookingDate)"></td>
-                                
-                                <!-- Time -->
+                                <!-- Date & Time -->
                                 <td>
-                                    <span class="font-medium" x-text="booking.bookingTime || ''"></span>
-                                    <div class="text-xs text-[#64748b]">2 hrs dining</div>
+                                    <div x-text="formatDate(booking.bookingDate)"></div>
+                                    <div class="text-xs text-[#64748b]" x-text="booking.bookingTime || ''"></div>
                                 </td>
                                 
-                                <!-- Party Size -->
+                                <!-- Guests -->
                                 <td class="text-center">
-                                    <span class="flex items-center gap-1">
-                                        <i class="fas fa-user text-[#d4a373] text-xs"></i>
-                                        <span x-text="booking.partySize || '1'"></span>
+                                    <span x-text="booking.numberOfGuests || 1"></span>
+                                    <span class="text-xs text-[#64748b]" x-text="booking.numberOfGuests === 1 ? 'person' : 'persons'"></span>
+                                </td>
+                                
+                                <!-- Duration -->
+                                <td>
+                                    <span class="duration-pill">
+                                        <span x-text="booking.serviceDuration ? (booking.serviceDuration === 0 ? 'Unlimited' : booking.serviceDuration + ' min') : '—'"></span>
                                     </span>
+                                </td>
+                                
+                                <!-- Total Price -->
+                                <td>
+                                    <div class="font-semibold">
+                                        <span x-show="booking.totalPrice === 0" class="free-badge">Free</span>
+                                        <span x-show="booking.totalPrice > 0">LKR <span x-text="formatPrice(booking.totalPrice)"></span></span>
+                                    </div>
                                 </td>
                                 
                                 <!-- Status -->
@@ -483,7 +535,7 @@
             <div class="flex items-center gap-2">
                 <span class="text-sm text-[#64748b]">Show:</span>
                 <select x-model="itemsPerPage" @change="currentPage = 1" 
-                        class="border border-[#e2e8f0] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#d4a373]">
+                        class="border border-[#e2e8f0] rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#0284a8]">
                     <option value="10">10 / page</option>
                     <option value="20">20 / page</option>
                     <option value="50">50 / page</option>
@@ -492,14 +544,14 @@
             
             <div class="flex items-center gap-2">
                 <button @click="prevPage" :disabled="currentPage === 1" 
-                        class="w-8 h-8 rounded-full border border-[#e2e8f0] hover:bg-[#fff9f0] transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        class="w-8 h-8 rounded-full border border-[#e2e8f0] hover:bg-[#f0f7fa] transition disabled:opacity-50 disabled:cursor-not-allowed">
                     <i class="fas fa-chevron-left text-xs"></i>
                 </button>
                 <span class="text-sm text-[#1e3c5c]">
                     Page <span x-text="currentPage"></span> of <span x-text="totalPages"></span>
                 </span>
                 <button @click="nextPage" :disabled="currentPage === totalPages" 
-                        class="w-8 h-8 rounded-full border border-[#e2e8f0] hover:bg-[#fff9f0] transition disabled:opacity-50 disabled:cursor-not-allowed">
+                        class="w-8 h-8 rounded-full border border-[#e2e8f0] hover:bg-[#f0f7fa] transition disabled:opacity-50 disabled:cursor-not-allowed">
                     <i class="fas fa-chevron-right text-xs"></i>
                 </button>
             </div>
@@ -520,14 +572,14 @@
                 </button>
                 
                 <div x-show="selectedBooking">
-                    <h2 class="text-2xl font-bold text-[#1e3c5c] mb-4">Table Booking Details</h2>
+                    <h2 class="text-2xl font-bold text-[#1e3c5c] mb-4">Service Booking Details</h2>
                     
-                    <!-- Reservation Info -->
-                    <div class="bg-[#fff9f0] p-4 rounded-xl mb-4">
+                    <!-- Booking Info -->
+                    <div class="bg-[#f8fafc] p-4 rounded-xl mb-4">
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-xs text-[#64748b]">Reservation Number</p>
-                                <p class="text-lg font-bold text-[#d4a373]" x-text="selectedBooking?.reservationNo"></p>
+                                <p class="text-xs text-[#64748b]">Booking Number</p>
+                                <p class="text-lg font-bold text-[#0284a8]" x-text="selectedBooking?.bookingNo"></p>
                             </div>
                             <span class="status-badge" :class="'status-' + (selectedBooking?.status || 'pending')">
                                 <i class="fas" :class="getStatusIcon(selectedBooking?.status)"></i>
@@ -536,37 +588,47 @@
                         </div>
                     </div>
                     
-                    <!-- Table Details -->
-                    <div class="bg-[#fff9f0] p-4 rounded-xl mb-4">
+                    <!-- Service Details -->
+                    <div class="bg-[#f8fafc] p-4 rounded-xl mb-4">
                         <h3 class="font-semibold mb-3 flex items-center gap-2">
-                            <i class="fas fa-utensils text-[#d4a373]"></i>
-                            Table Information
+                            <i class="fas fa-spa text-[#0284a8]"></i>
+                            Service Information
                         </h3>
-                        <div class="grid grid-cols-2 gap-3">
-                            <div>
-                                <p class="text-xs text-[#64748b]">Table</p>
-                                <p class="font-medium" x-text="selectedBooking?.tableNo ? (selectedBooking?.tablePrefix + ' - ' + selectedBooking?.tableNo) : 'Table #' + selectedBooking?.tableId"></p>
+                        <div class="flex items-start gap-4">
+                            <div class="service-icon">
+                                <i class="fas fa-spa"></i>
                             </div>
-                            <div>
-                                <p class="text-xs text-[#64748b]">Location</p>
-                                <p class="font-medium" x-text="selectedBooking?.locationName || 'Standard'"></p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-[#64748b]">Capacity</p>
-                                <p class="font-medium" x-text="(selectedBooking?.tableCapacity || selectedBooking?.capacity || '?') + ' persons'"></p>
-                            </div>
-                            <div>
-                                <p class="text-xs text-[#64748b]">Minimum Spend</p>
-                                <p class="font-medium">$<span x-text="selectedBooking?.minimumSpend || '0'"></span></p>
+                            <div class="flex-1 grid grid-cols-2 gap-3">
+                                <div class="col-span-2">
+                                    <p class="text-xs text-[#64748b]">Service</p>
+                                    <p class="font-medium" x-text="selectedBooking?.serviceTitle || 'N/A'"></p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-[#64748b]">Category</p>
+                                    <p class="font-medium">
+                                        <span class="category-badge" 
+                                              :class="'category-' + getCategoryClass(selectedBooking?.serviceCategoryName)">
+                                            <span x-text="selectedBooking?.serviceCategoryName || 'Wellness'"></span>
+                                        </span>
+                                    </p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-[#64748b]">Duration</p>
+                                    <p class="font-medium">
+                                        <span class="duration-pill">
+                                            <span x-text="selectedBooking?.serviceDuration ? (selectedBooking.serviceDuration === 0 ? 'Unlimited' : selectedBooking.serviceDuration + ' minutes') : 'N/A'"></span>
+                                        </span>
+                                    </p>
+                                </div>
                             </div>
                         </div>
                     </div>
                     
                     <!-- Guest Details -->
-                    <div class="bg-[#fff9f0] p-4 rounded-xl mb-4">
+                    <div class="bg-[#f8fafc] p-4 rounded-xl mb-4">
                         <h3 class="font-semibold mb-3 flex items-center gap-2">
-                            <i class="fas fa-user text-[#d4a373]"></i>
-                            Guest Information
+                            <i class="fas fa-user text-[#0284a8]"></i>
+                            Your Information
                         </h3>
                         <div class="grid grid-cols-2 gap-3">
                             <div>
@@ -581,46 +643,75 @@
                                 <p class="text-xs text-[#64748b]">Phone</p>
                                 <p class="font-medium" x-text="selectedBooking?.guestPhone || 'N/A'"></p>
                             </div>
+                            <div>
+                                <p class="text-xs text-[#64748b]">Guest ID</p>
+                                <p class="font-medium" x-text="'#' + selectedBooking?.guestId"></p>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- Booking Date & Time -->
-                    <div class="bg-[#fff9f0] p-4 rounded-xl mb-4">
+                    <!-- Booking Schedule -->
+                    <div class="bg-[#f8fafc] p-4 rounded-xl mb-4">
                         <h3 class="font-semibold mb-3 flex items-center gap-2">
-                            <i class="fas fa-calendar-alt text-[#d4a373]"></i>
-                            Booking Details
+                            <i class="fas fa-calendar-alt text-[#0284a8]"></i>
+                            Booking Schedule
                         </h3>
                         <div class="grid grid-cols-2 gap-4">
                             <div>
                                 <p class="text-xs text-[#64748b]">Date</p>
                                 <p class="font-medium" x-text="formatDate(selectedBooking?.bookingDate)"></p>
+                                <p class="text-xs text-[#0284a8]" x-text="selectedBooking?.bookingTime"></p>
                             </div>
                             <div>
-                                <p class="text-xs text-[#64748b]">Time</p>
-                                <p class="font-medium" x-text="selectedBooking?.bookingTime"></p>
-                                <p class="text-xs text-[#64748b]">(2 hours dining)</p>
+                                <p class="text-xs text-[#64748b]">End Time</p>
+                                <p class="font-medium" x-text="calculateEndTime(selectedBooking?.bookingTime, selectedBooking?.serviceDuration)"></p>
+                                <p class="text-xs text-[#0284a8]" x-text="'Duration: ' + (selectedBooking?.serviceDuration === 0 ? 'Unlimited' : selectedBooking?.serviceDuration + ' min')"></p>
                             </div>
                         </div>
                         <div class="mt-2 text-sm">
-                            <span class="text-[#64748b]">Party Size:</span>
-                            <span class="font-semibold ml-2 flex items-center gap-1">
-                                <i class="fas fa-user text-[#d4a373]"></i>
-                                <span x-text="selectedBooking?.partySize || '1'"></span>
-                            </span>
+                            <span class="text-[#64748b]">Number of Guests:</span>
+                            <span class="font-semibold ml-2" x-text="selectedBooking?.numberOfGuests || 1"></span>
                         </div>
                     </div>
                     
                     <!-- Special Requests -->
-                    <div x-show="selectedBooking?.specialRequests" class="bg-[#fff9f0] p-4 rounded-xl mb-4">
+                    <div x-show="selectedBooking?.specialRequests" class="bg-[#f8fafc] p-4 rounded-xl mb-4">
                         <h3 class="font-semibold mb-2 flex items-center gap-2">
-                            <i class="fas fa-comment text-[#d4a373]"></i>
+                            <i class="fas fa-comment text-[#0284a8]"></i>
                             Special Requests
                         </h3>
                         <p class="text-sm" x-text="selectedBooking?.specialRequests"></p>
                     </div>
                     
+                    <!-- Payment Info -->
+                    <div class="bg-[#f8fafc] p-4 rounded-xl mb-4">
+                        <h3 class="font-semibold mb-2 flex items-center gap-2">
+                            <i class="fas fa-credit-card text-[#0284a8]"></i>
+                            Payment Information
+                        </h3>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-[#64748b]">Price per person</span>
+                                <span class="font-medium" x-text="selectedBooking?.serviceFee ? 'LKR ' + formatPrice(selectedBooking.serviceFee) : 'N/A'"></span>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[#64748b]">Number of guests</span>
+                                <span class="font-medium" x-text="selectedBooking?.numberOfGuests || 1"></span>
+                            </div>
+                            <div class="border-t border-[#e2e8f0] pt-2 mt-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="font-semibold">Total Amount</span>
+                                    <span class="text-xl font-bold text-[#0284a8]">
+                                        <span x-show="selectedBooking?.totalPrice === 0" class="free-badge text-base">Free</span>
+                                        <span x-show="selectedBooking?.totalPrice > 0">LKR <span x-text="formatPrice(selectedBooking?.totalPrice)"></span></span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Metadata -->
-                    <div class="text-xs text-[#64748b] border-t border-[#d4a373] pt-4">
+                    <div class="text-xs text-[#64748b] border-t border-[#e2e8f0] pt-4">
                         <p>Booking ID: #<span x-text="selectedBooking?.id"></span></p>
                         <p>Created: <span x-text="formatDateTime(selectedBooking?.createdDate)"></span></p>
                         <p>Last Updated: <span x-text="formatDateTime(selectedBooking?.updatedDate)"></span></p>
@@ -629,7 +720,7 @@
                 
                 <div class="flex justify-end mt-6">
                     <button @click="showViewModal = false" 
-                            class="px-4 py-2 rounded-lg bg-[#d4a373] text-white hover:bg-[#b88b4a] transition text-sm font-medium">
+                            class="px-4 py-2 rounded-lg bg-[#0284a8] text-white hover:bg-[#03738C] transition text-sm font-medium">
                         Close
                     </button>
                 </div>
@@ -644,14 +735,18 @@
                         <i class="fas fa-exclamation-triangle text-2xl text-red-500"></i>
                     </div>
                     
-                    <h3 class="text-xl font-bold text-[#1e3c5c] mb-2">Cancel Table Booking</h3>
+                    <h3 class="text-xl font-bold text-[#1e3c5c] mb-2">Cancel Service Booking</h3>
                     <p class="text-[#64748b] mb-2">
                         Are you sure you want to cancel booking 
-                        <span class="font-semibold" x-text="selectedBooking?.reservationNo"></span>?
+                        <span class="font-semibold" x-text="selectedBooking?.bookingNo"></span>?
+                    </p>
+                    <p class="text-xs text-[#64748b] mb-4">
+                        Service: <span x-text="selectedBooking?.serviceTitle"></span><br>
+                        Date: <span x-text="formatDate(selectedBooking?.bookingDate) + ' at ' + selectedBooking?.bookingTime"></span>
                     </p>
                     <p class="text-sm text-red-500 mb-6">
                         <i class="fas fa-info-circle mr-1"></i>
-                        This action cannot be undone.
+                        This action cannot be undone. Bookings can only be cancelled up to 2 hours before the scheduled time.
                     </p>
                     
                     <div class="flex gap-3">
@@ -674,7 +769,7 @@
     <jsp:include page="component/footer.jsp" />
 
     <script>
-        function tableActivity() {
+        function serviceActivity() {
             return {
                 // User data
                 userId: null,
@@ -683,6 +778,14 @@
                 bookings: [],
                 filteredBookings: [],
                 loading: true,
+                
+                // Stats
+                stats: {
+                    upcoming: 0,
+                    pending: 0,
+                    completed: 0,
+                    totalSpent: 0
+                },
                 
                 // Filters
                 statusFilter: 'all',
@@ -705,7 +808,7 @@
                     
                     if (!this.userId) {
                         // Redirect to login if not logged in
-                        window.location.href = '${pageContext.request.contextPath}/login.jsp?redirect=tableactivity';
+                        window.location.href = '${pageContext.request.contextPath}/login.jsp?redirect=serviceactivity';
                         return;
                     }
                     
@@ -714,32 +817,51 @@
                     // Watch for filter changes
                     this.$watch('filteredBookings', () => {
                         this.currentPage = 1;
+                        this.calculateStats();
                     });
                 },
                 
                 loadBookings() {
                     this.loading = true;
                     
-                    fetch('${pageContext.request.contextPath}/tablebookings/api/guest?guestId=' + this.userId)
+                    fetch('${pageContext.request.contextPath}/bookservice/api/guest?guestId=' + this.userId)
                         .then(response => {
-                            if (!response.ok) throw new Error('Failed to load table bookings');
+                            if (!response.ok) throw new Error('Failed to load bookings');
                             return response.json();
                         })
                         .then(data => {
                             this.bookings = Array.isArray(data) ? data : [];
                             this.applyFilters();
+                            this.calculateStats();
                             this.loading = false;
                         })
                         .catch(error => {
-                            console.error('Error loading table bookings:', error);
+                            console.error('Error loading bookings:', error);
                             this.bookings = [];
                             this.filteredBookings = [];
                             this.loading = false;
                             
                             if (window.showError) {
-                                window.showError('Failed to load table bookings', 3000);
+                                window.showError('Failed to load service bookings', 3000);
                             }
                         });
+                },
+                
+                calculateStats() {
+                    const now = new Date();
+                    const today = now.toISOString().split('T')[0];
+                    
+                    this.stats = {
+                        upcoming: this.bookings.filter(b => 
+                            (b.status === 'confirmed' || b.status === 'pending') && 
+                            b.bookingDate >= today
+                        ).length,
+                        pending: this.bookings.filter(b => b.status === 'pending').length,
+                        completed: this.bookings.filter(b => b.status === 'completed').length,
+                        totalSpent: this.bookings
+                            .filter(b => b.status === 'completed' && b.totalPrice)
+                            .reduce((sum, b) => sum + (b.totalPrice || 0), 0)
+                    };
                 },
                 
                 applyFilters() {
@@ -777,15 +899,16 @@
                     if (this.searchQuery) {
                         const query = this.searchQuery.toLowerCase();
                         filtered = filtered.filter(b => 
-                            (b.reservationNo && b.reservationNo.toLowerCase().includes(query)) ||
-                            (b.tableNo && b.tableNo.toLowerCase().includes(query)) ||
-                            (b.tableId && b.tableId.toString().includes(query))
+                            (b.bookingNo && b.bookingNo.toLowerCase().includes(query)) ||
+                            (b.serviceTitle && b.serviceTitle.toLowerCase().includes(query)) ||
+                            (b.serviceCategoryName && b.serviceCategoryName.toLowerCase().includes(query))
                         );
                     }
                     
                     // Sort by date (newest first)
                     filtered.sort((a, b) => {
-                        return new Date(b.bookingDate || b.createdDate) - new Date(a.bookingDate || a.createdDate);
+                        return new Date(b.bookingDate + 'T' + (b.bookingTime || '00:00')) - 
+                               new Date(a.bookingDate + 'T' + (a.bookingTime || '00:00'));
                     });
                     
                     this.filteredBookings = filtered;
@@ -835,7 +958,17 @@
                 
                 canCancel(booking) {
                     // Guest can only cancel pending or confirmed bookings
-                    return booking && (booking.status === 'pending' || booking.status === 'confirmed');
+                    // Business logic: can cancel up to 2 hours before
+                    if (!booking || (booking.status !== 'pending' && booking.status !== 'confirmed')) {
+                        return false;
+                    }
+                    
+                    // Check if booking is at least 2 hours in the future
+                    const now = new Date();
+                    const bookingDateTime = new Date(booking.bookingDate + 'T' + booking.bookingTime);
+                    const twoHoursFromNow = new Date(now.getTime() + 2 * 60 * 60 * 1000);
+                    
+                    return bookingDateTime > twoHoursFromNow;
                 },
                 
                 cancelBooking() {
@@ -846,7 +979,7 @@
                         window.showInfo('Cancelling booking...', 0);
                     }
                     
-                    fetch('${pageContext.request.contextPath}/tablebookings/api/cancel?bookingId=' + this.selectedBooking.id + '&guestId=' + this.userId, {
+                    fetch('${pageContext.request.contextPath}/bookservice/api/cancel?bookingId=' + this.selectedBooking.id + '&guestId=' + this.userId, {
                         method: 'PUT'
                     })
                     .then(response => {
@@ -880,11 +1013,34 @@
                 },
                 
                 // Helper methods
+                getCategoryClass(categoryName) {
+                    if (!categoryName) return 'spa';
+                    const name = categoryName.toLowerCase();
+                    if (name.includes('massage')) return 'massage';
+                    if (name.includes('ayurveda')) return 'ayurveda';
+                    if (name.includes('beauty')) return 'beauty';
+                    if (name.includes('yoga')) return 'yoga';
+                    if (name.includes('fitness')) return 'fitness';
+                    return 'spa';
+                },
+                
+                calculateEndTime(timeString, duration) {
+                    if (!timeString || !duration || duration === 0) return '—';
+                    try {
+                        const [hours, minutes] = timeString.split(':').map(Number);
+                        const startTime = new Date();
+                        startTime.setHours(hours, minutes, 0);
+                        const endTime = new Date(startTime.getTime() + duration * 60000);
+                        return endTime.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+                    } catch (e) {
+                        return '—';
+                    }
+                },
+                
                 getStatusIcon(status) {
                     switch(status) {
                         case 'pending': return 'fa-clock';
                         case 'confirmed': return 'fa-check-circle';
-                        case 'seated': return 'fa-chair';
                         case 'completed': return 'fa-check-double';
                         case 'cancelled': return 'fa-times-circle';
                         case 'rejected': return 'fa-ban';
@@ -896,6 +1052,11 @@
                 formatStatus(status) {
                     if (!status) return '';
                     return status.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                },
+                
+                formatPrice(price) {
+                    if (!price && price !== 0) return '0';
+                    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
                 },
                 
                 formatDate(dateString) {

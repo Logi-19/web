@@ -1,6 +1,6 @@
 <%-- 
     Document   : bookservice
-    Author     : kiru
+    Author     : Based on bookroom.jsp pattern
 --%>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
@@ -9,7 +9,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Book a Service · Ocean View Resort</title>
+    <title>Book Spa & Wellness · Ocean View Resort</title>
     <!-- Tailwind via CDN + Inter font -->
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
@@ -17,7 +17,7 @@
     <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
     <!-- Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Flatpickr for date picker -->
+    <!-- Flatpickr for date and time picker -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <style>
@@ -46,7 +46,7 @@
         .service-image-wrapper {
             position: relative;
             overflow: hidden;
-            height: 240px;
+            height: 220px;
         }
         
         .service-image {
@@ -60,7 +60,6 @@
             transform: scale(1.1);
         }
         
-        /* Image overlay gradient */
         .image-overlay {
             position: absolute;
             bottom: 0;
@@ -71,7 +70,6 @@
             z-index: 1;
         }
         
-        /* Floating badges */
         .service-badge {
             position: absolute;
             top: 15px;
@@ -91,9 +89,22 @@
             gap: 0.5rem;
         }
         
-        .service-badge i {
-            font-size: 0.875rem;
-            color: #d4a373;
+        .duration-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: rgba(2, 132, 168, 0.9);
+            backdrop-filter: blur(5px);
+            padding: 0.5rem 1rem;
+            border-radius: 50px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         
         .image-counter {
@@ -114,12 +125,6 @@
             border: 1px solid rgba(255,255,255,0.2);
         }
         
-        .image-counter i {
-            font-size: 0.7rem;
-            color: #b5e5e0;
-        }
-        
-        /* Navigation dots */
         .nav-dots {
             position: absolute;
             bottom: 15px;
@@ -146,12 +151,6 @@
             box-shadow: 0 0 10px rgba(2, 132, 168, 0.5);
         }
         
-        .nav-dot:hover {
-            background: white;
-            transform: scale(1.2);
-        }
-        
-        /* Navigation arrows */
         .nav-arrow {
             position: absolute;
             top: 50%;
@@ -193,7 +192,6 @@
             right: 10px;
         }
         
-        /* Card content */
         .card-content {
             padding: 1.5rem;
             flex: 1;
@@ -210,18 +208,14 @@
         }
         
         .service-name {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 800;
             color: #1e3c5c;
             letter-spacing: -0.5px;
             display: flex;
             align-items: center;
             gap: 0.5rem;
-        }
-        
-        .service-name i {
-            color: #d4a373;
-            font-size: 1.2rem;
+            line-height: 1.3;
         }
         
         .category-badge-enhanced {
@@ -233,36 +227,37 @@
             letter-spacing: 0.5px;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05);
             border: 1px solid rgba(255,255,255,0.3);
+            white-space: nowrap;
         }
         
         .category-badge-enhanced.spa {
+            background: linear-gradient(135deg, #e6f0fa, #d4e4f5);
+            color: #2c5282;
+        }
+        
+        .category-badge-enhanced.massage {
+            background: linear-gradient(135deg, #e6f7e6, #c8e6c9);
+            color: #27632e;
+        }
+        
+        .category-badge-enhanced.ayurveda {
             background: linear-gradient(135deg, #f3e5f5, #e1bee7);
             color: #6a1b9a;
         }
         
-        .category-badge-enhanced.massage {
-            background: linear-gradient(135deg, #dbeafe, #bfdbfe);
-            color: #1e40af;
-        }
-        
-        .category-badge-enhanced.ayurveda {
-            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
-            color: #166534;
-        }
-        
         .category-badge-enhanced.beauty {
-            background: linear-gradient(135deg, #fce7f3, #fbcfe8);
-            color: #9d174d;
-        }
-        
-        .category-badge-enhanced.yoga {
             background: linear-gradient(135deg, #fff3e0, #ffe0b2);
             color: #b85d1a;
         }
         
+        .category-badge-enhanced.yoga {
+            background: linear-gradient(135deg, #ffe5e5, #ffcdd2);
+            color: #b71c1c;
+        }
+        
         .category-badge-enhanced.fitness {
-            background: linear-gradient(135deg, #cffafe, #a5f3fc);
-            color: #0891b2;
+            background: linear-gradient(135deg, #e0f2fe, #b8e2f2);
+            color: #0369a1;
         }
         
         .service-description {
@@ -276,19 +271,38 @@
             overflow: hidden;
         }
         
-        /* Duration pill */
-        .duration-pill {
-            background-color: #f0f7fa;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px;
-            font-size: 0.75rem;
-            color: #0284a8;
-            font-weight: 600;
-            display: inline-block;
+        .service-details-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
         }
         
-        /* Price and action */
-        .info-section {
+        .detail-item {
+            background: #f0f7fa;
+            border-radius: 0.75rem;
+            padding: 0.5rem;
+            text-align: center;
+        }
+        
+        .detail-label {
+            font-size: 0.65rem;
+            color: #3a5a78;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+        
+        .detail-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0284a8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.25rem;
+        }
+        
+        .price-section {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -319,12 +333,6 @@
             gap: 0.25rem;
         }
         
-        .price-value small {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #3a5a78;
-        }
-        
         .book-now-btn-enhanced {
             background: linear-gradient(135deg, #0284a8, #03738C);
             color: white;
@@ -350,42 +358,24 @@
             box-shadow: none;
         }
         
-        .book-now-btn-enhanced.disabled:hover {
-            transform: none;
-            box-shadow: none;
+        .free-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
         }
         
-        .book-now-btn-enhanced::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: left 0.5s ease;
+        .unlimited-badge {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 600;
         }
         
-        .book-now-btn-enhanced:hover:not(.disabled) {
-            transform: translateY(-3px) scale(1.05);
-            box-shadow: 0 15px 25px -8px rgba(2, 132, 168, 0.6);
-            background: linear-gradient(135deg, #03738C, #025c73);
-        }
-        
-        .book-now-btn-enhanced:hover:not(.disabled)::before {
-            left: 100%;
-        }
-        
-        .book-now-btn-enhanced i {
-            font-size: 1rem;
-            transition: transform 0.3s ease;
-        }
-        
-        .book-now-btn-enhanced:hover:not(.disabled) i {
-            transform: translateX(5px);
-        }
-        
-        /* Enhanced filter section */
         .filter-section-enhanced {
             background: linear-gradient(135deg, white, #f8fafc);
             border-radius: 2rem;
@@ -407,10 +397,6 @@
             letter-spacing: 0.5px;
         }
         
-        .filter-title-enhanced i {
-            color: #d4a373;
-        }
-        
         .filter-select-enhanced {
             width: 100%;
             border: 2px solid #e2e8f0;
@@ -427,12 +413,6 @@
             background-position: right 1rem center;
         }
         
-        .filter-select-enhanced:focus {
-            outline: none;
-            border-color: #0284a8;
-            box-shadow: 0 0 0 4px rgba(2, 132, 168, 0.1);
-        }
-        
         .price-input-enhanced {
             border: 2px solid #e2e8f0;
             border-radius: 1rem;
@@ -440,12 +420,6 @@
             font-size: 0.95rem;
             transition: all 0.3s ease;
             width: 100%;
-        }
-        
-        .price-input-enhanced:focus {
-            outline: none;
-            border-color: #0284a8;
-            box-shadow: 0 0 0 4px rgba(2, 132, 168, 0.1);
         }
         
         .clear-filters-btn {
@@ -468,7 +442,6 @@
             color: #dc2626;
         }
         
-        /* User welcome bar */
         .user-welcome {
             background: linear-gradient(135deg, #0284a8, #03738C);
             border-radius: 2rem;
@@ -499,18 +472,6 @@
             border: 2px solid rgba(255,255,255,0.5);
         }
         
-        .user-details h3 {
-            font-weight: 700;
-            font-size: 1.1rem;
-            margin-bottom: 0.25rem;
-        }
-        
-        .user-details p {
-            font-size: 0.8rem;
-            opacity: 0.9;
-        }
-        
-        /* Pagination enhanced */
         .pagination-enhanced {
             display: flex;
             justify-content: center;
@@ -547,12 +508,6 @@
             color: white;
         }
         
-        .pagination-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        
-        /* Loading skeleton enhanced */
         .skeleton-enhanced {
             background: linear-gradient(90deg, #f0f7fa 25%, #e2e8f0 50%, #f0f7fa 75%);
             background-size: 200% 100%;
@@ -564,7 +519,6 @@
             100% { background-position: -200% 0; }
         }
 
-        /* Booking Modal Styles */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -628,7 +582,7 @@
         
         .service-detail-image {
             width: 100%;
-            height: 200px;
+            height: 250px;
             object-fit: cover;
             border-radius: 1rem;
         }
@@ -648,7 +602,7 @@
             box-shadow: 0 0 0 4px rgba(2, 132, 168, 0.1);
         }
         
-        .time-select {
+        .date-select {
             width: 100%;
             padding: 0.75rem 1rem;
             border: 2px solid #e2e8f0;
@@ -656,6 +610,13 @@
             font-size: 0.95rem;
             background: white;
             cursor: pointer;
+        }
+        
+        .total-price {
+            background: linear-gradient(135deg, #f0f7fa, #e5f0f5);
+            padding: 1rem;
+            border-radius: 1rem;
+            border: 1px solid #b5e5e0;
         }
         
         .confirm-btn {
@@ -670,9 +631,15 @@
             flex: 1;
         }
         
-        .confirm-btn:hover {
+        .confirm-btn:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.4);
+        }
+        
+        .confirm-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: linear-gradient(135deg, #94a3b8, #64748b);
         }
         
         .cancel-btn {
@@ -691,6 +658,138 @@
             background: #f1f5f9;
             border-color: #94a3b8;
         }
+        
+        .booking-summary {
+            background: #f8fafc;
+            border-radius: 1rem;
+            padding: 1rem;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+        
+        .summary-row:last-child {
+            border-bottom: none;
+        }
+        
+        .summary-label {
+            color: #3a5a78;
+            font-size: 0.9rem;
+        }
+        
+        .summary-value {
+            font-weight: 600;
+            color: #1e3c5c;
+        }
+        
+        .summary-total {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #0284a8;
+        }
+        
+        .guest-counter {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 1rem;
+            padding: 0.5rem;
+        }
+        
+        .guest-counter-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: #f0f7fa;
+            border: 1px solid #b5e5e0;
+            color: #0284a8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .guest-counter-btn:hover:not(:disabled) {
+            background: #0284a8;
+            color: white;
+            transform: scale(1.1);
+        }
+        
+        .guest-counter-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .guest-count {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #1e3c5c;
+            min-width: 40px;
+            text-align: center;
+        }
+        
+        .time-slots {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+            margin-top: 0.5rem;
+            max-height: 200px;
+            overflow-y: auto;
+            padding: 0.5rem;
+            border: 1px solid #e2e8f0;
+            border-radius: 1rem;
+        }
+        
+        .time-slot {
+            padding: 0.5rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 0.75rem;
+            text-align: center;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #1e3c5c;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .time-slot:hover:not(.unavailable) {
+            border-color: #0284a8;
+            background: #f0f7fa;
+        }
+        
+        .time-slot.selected {
+            background: #0284a8;
+            color: white;
+            border-color: #0284a8;
+        }
+        
+        .time-slot.unavailable {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f1f5f9;
+            text-decoration: line-through;
+        }
+
+        .booking-input.unavailable {
+            border-color: #ef4444;
+            background-color: #fee2e2;
+        }
+        
+        .booking-input.available {
+            border-color: #10b981;
+            background-color: #f0fdf4;
+        }
+
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="bg-[#f0f7fa] text-[#1e3c5c] antialiased" x-data="serviceBooking()" x-init="init()">
@@ -704,7 +803,7 @@
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-16">
         
         <!-- User Welcome Bar (shown when logged in) -->
-        <div x-show="isLoggedIn" class="user-welcome">
+        <div x-show="isLoggedIn" class="user-welcome" x-cloak>
             <div class="user-info">
                 <div class="user-avatar">
                     <i class="fas fa-user-circle"></i>
@@ -718,8 +817,8 @@
 
         <!-- Page Header -->
         <div class="mb-8 text-center md:text-left">
-            <h1 class="text-4xl md:text-5xl font-bold text-[#1e3c5c]">Book Your Service <span class="text-[#d4a373]">💆‍♀️</span></h1>
-            <p class="text-[#3a5a78] mt-3 text-lg">Choose from our selection of spa and wellness services for ultimate relaxation</p>
+            <h1 class="text-4xl md:text-5xl font-bold text-[#1e3c5c]">Spa & Wellness <span class="text-[#d4a373]">💆‍♀️</span></h1>
+            <p class="text-[#3a5a78] mt-3 text-lg">Indulge in our luxurious spa treatments and wellness services</p>
         </div>
 
         <!-- Enhanced Filter Section -->
@@ -733,7 +832,7 @@
                     <select x-model="filters.categoryId" @change="applyFilters()" class="filter-select-enhanced">
                         <option value="all">All Categories</option>
                         <template x-for="category in categories" :key="category.id">
-                            <option :value="category.id" x-text="category.name"></option>
+                            <option :value="category.id" x-text="category.name + ' (' + category.count + ')'"></option>
                         </template>
                     </select>
                 </div>
@@ -766,11 +865,11 @@
                     </div>
                     <select x-model="filters.duration" @change="applyFilters()" class="filter-select-enhanced">
                         <option value="all">Any Duration</option>
+                        <option value="0">Unlimited</option>
                         <option value="30">30 min</option>
                         <option value="60">60 min</option>
                         <option value="90">90 min</option>
                         <option value="120">120 min</option>
-                        <option value="0">Unlimited</option>
                     </select>
                 </div>
 
@@ -785,6 +884,7 @@
                         <option value="price_high">Price: High to Low</option>
                         <option value="duration_low">Duration: Short to Long</option>
                         <option value="duration_high">Duration: Long to Short</option>
+                        <option value="name">Name: A to Z</option>
                     </select>
                 </div>
             </div>
@@ -832,7 +932,7 @@
             <!-- No Services Found -->
             <template x-if="!loading && filteredServices.length === 0">
                 <div class="col-span-full">
-                    <div class="no-services">
+                    <div class="text-center py-16">
                         <span class="text-7xl mb-6 block">💆‍♀️</span>
                         <h3 class="text-3xl font-bold text-[#1e3c5c] mb-3">No Services Available</h3>
                         <p class="text-[#3a5a78] mb-6 text-lg">Try adjusting your filters to find the perfect service for your relaxation.</p>
@@ -861,6 +961,17 @@
                             <div class="service-badge">
                                 <i class="fas fa-spa"></i>
                                 <span x-text="service.title"></span>
+                            </div>
+                            
+                            <!-- Duration Badge -->
+                            <div class="duration-badge">
+                                <i class="far fa-clock"></i>
+                                <span x-text="service.duration === 0 ? 'Unlimited' : service.duration + ' min'"></span>
+                            </div>
+                            
+                            <!-- Free Badge (if free) -->
+                            <div x-show="service.fees === 0" class="free-badge" style="position: absolute; top: 60px; left: 15px; z-index: 2;">
+                                <i class="fas fa-gift mr-1"></i> Free
                             </div>
                             
                             <!-- Image Counter -->
@@ -900,14 +1011,18 @@
                                     <i class="fas fa-spa"></i>
                                     <span x-text="service.title"></span>
                                 </div>
+                            </div>
+
+                            <!-- Category Badge (below title) -->
+                            <div class="mb-3">
                                 <span class="category-badge-enhanced"
                                       :class="{
-                                          'spa': service.categoryName === 'Spa & Wellness',
-                                          'massage': service.categoryName === 'Massage Therapy',
-                                          'ayurveda': service.categoryName === 'Ayurveda',
-                                          'beauty': service.categoryName === 'Beauty Treatments',
-                                          'yoga': service.categoryName === 'Yoga & Meditation',
-                                          'fitness': service.categoryName === 'Fitness'
+                                          'spa': (service.categoryName || '').toLowerCase().includes('spa'),
+                                          'massage': (service.categoryName || '').toLowerCase().includes('massage'),
+                                          'ayurveda': (service.categoryName || '').toLowerCase().includes('ayurveda'),
+                                          'beauty': (service.categoryName || '').toLowerCase().includes('beauty'),
+                                          'yoga': (service.categoryName || '').toLowerCase().includes('yoga'),
+                                          'fitness': (service.categoryName || '').toLowerCase().includes('fitness')
                                       }">
                                     <i class="fas fa-tag mr-1"></i>
                                     <span x-text="service.categoryName || 'Wellness'"></span>
@@ -915,44 +1030,44 @@
                             </div>
 
                             <!-- Description -->
-                            <p class="service-description" x-text="service.description || 'Experience ultimate relaxation with our premium wellness services.'"></p>
+                            <p class="service-description" x-text="service.description || 'Experience pure relaxation with our premium wellness service.'"></p>
 
-                            <!-- Duration and Price -->
-                            <div class="info-section">
-                                <div class="flex flex-col gap-2">
-                                    <!-- Duration -->
-                                    <div class="duration-pill">
-                                        <i class="far fa-clock mr-1"></i>
-                                        <template x-if="service.duration === 0">
-                                            <span>Unlimited</span>
-                                        </template>
-                                        <template x-if="service.duration > 0">
-                                            <span x-text="service.duration + ' min'"></span>
-                                        </template>
-                                    </div>
-                                    
-                                    <!-- Price -->
-                                    <div class="price-info">
-                                        <span class="price-label">Starting from</span>
-                                        <div class="price-value">
-                                            <template x-if="service.fees === 0">
-                                                <span>Free</span>
-                                            </template>
-                                            <template x-if="service.fees > 0">
-                                                <>
-                                                    LKR <span x-text="formatPrice(service.fees)"></span>
-                                                    <small></small>
-                                                </>
-                                            </template>
-                                        </div>
+                            <!-- Service Details Grid -->
+                            <div class="service-details-grid">
+                                <!-- Duration Detail -->
+                                <div class="detail-item">
+                                    <div class="detail-label">Duration</div>
+                                    <div class="detail-value">
+                                        <i class="far fa-clock"></i>
+                                        <span x-text="service.duration === 0 ? 'Unlimited' : service.duration + ' min'"></span>
                                     </div>
                                 </div>
                                 
+                                <!-- Price Detail -->
+                                <div class="detail-item">
+                                    <div class="detail-label">Price</div>
+                                    <div class="detail-value">
+                                        <i class="fas fa-tag"></i>
+                                        <span x-text="service.fees === 0 ? 'Free' : 'LKR ' + formatPrice(service.fees)"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Price and Book Button -->
+                            <div class="price-section">
+                                <div class="price-info">
+                                    <span class="price-label">Starting from</span>
+                                    <div class="price-value">
+                                        <span x-show="service.fees === 0">Free</span>
+                                        <span x-show="service.fees > 0">LKR <span x-text="formatPrice(service.fees)"></span></span>
+                                        <small x-show="service.fees > 0">/person</small>
+                                    </div>
+                                </div>
                                 <button @click="openBookingModal(service)" 
                                         class="book-now-btn-enhanced"
-                                        :class="{ 'disabled': !isLoggedIn }">
-                                    <span x-text="isLoggedIn ? 'Book Now' : 'Login to Book'"></span>
-                                    <i class="fas" :class="isLoggedIn ? 'fa-arrow-right' : 'fa-lock'"></i>
+                                        :class="{ 'disabled': !isLoggedIn || service.status === 'unavailable' }">
+                                    <span x-text="service.status === 'unavailable' ? 'Unavailable' : (!isLoggedIn ? 'Login to Book' : 'Book Now')"></span>
+                                    <i class="fas" :class="service.status === 'unavailable' ? 'fa-ban' : (isLoggedIn ? 'fa-arrow-right' : 'fa-lock')"></i>
                                 </button>
                             </div>
                         </div>
@@ -962,7 +1077,7 @@
         </div>
 
         <!-- Enhanced Pagination -->
-        <div x-show="!loading && filteredServices.length > 0" class="flex flex-col items-center mt-12">
+        <div x-show="!loading && filteredServices.length > 0" class="flex flex-col items-center mt-12" x-cloak>
             <div class="text-sm text-[#3a5a78] mb-4">
                 <i class="fas fa-spa mr-2"></i>
                 <span x-text="'Showing ' + (((currentPage - 1) * itemsPerPage) + 1) + ' - ' + Math.min(currentPage * itemsPerPage, filteredServices.length) + ' of ' + filteredServices.length + ' services'"></span>
@@ -1018,12 +1133,12 @@
                                 </div>
                                 <span class="category-badge-enhanced"
                                       :class="{
-                                          'spa': selectedService?.categoryName === 'Spa & Wellness',
-                                          'massage': selectedService?.categoryName === 'Massage Therapy',
-                                          'ayurveda': selectedService?.categoryName === 'Ayurveda',
-                                          'beauty': selectedService?.categoryName === 'Beauty Treatments',
-                                          'yoga': selectedService?.categoryName === 'Yoga & Meditation',
-                                          'fitness': selectedService?.categoryName === 'Fitness'
+                                          'spa': (selectedService?.categoryName || '').toLowerCase().includes('spa'),
+                                          'massage': (selectedService?.categoryName || '').toLowerCase().includes('massage'),
+                                          'ayurveda': (selectedService?.categoryName || '').toLowerCase().includes('ayurveda'),
+                                          'beauty': (selectedService?.categoryName || '').toLowerCase().includes('beauty'),
+                                          'yoga': (selectedService?.categoryName || '').toLowerCase().includes('yoga'),
+                                          'fitness': (selectedService?.categoryName || '').toLowerCase().includes('fitness')
                                       }">
                                     <span x-text="selectedService?.categoryName || 'Wellness'"></span>
                                 </span>
@@ -1032,26 +1147,22 @@
                             <div class="grid grid-cols-2 gap-3 mt-3">
                                 <div class="flex items-center gap-2 text-sm">
                                     <i class="far fa-clock text-[#0284a8]"></i>
-                                    <span>
-                                        <template x-if="selectedService?.duration === 0">
-                                            Unlimited
-                                        </template>
-                                        <template x-if="selectedService?.duration > 0">
-                                            <span x-text="selectedService?.duration + ' minutes'"></span>
-                                        </template>
-                                    </span>
+                                    <span x-text="'Duration: ' + (selectedService?.duration === 0 ? 'Unlimited' : selectedService?.duration + ' min')"></span>
                                 </div>
                                 <div class="flex items-center gap-2 text-sm">
                                     <i class="fas fa-tag text-[#0284a8]"></i>
-                                    <span>
-                                        <template x-if="selectedService?.fees === 0">
-                                            Free
-                                        </template>
-                                        <template x-if="selectedService?.fees > 0">
-                                            LKR <span x-text="formatPrice(selectedService?.fees)"></span>
-                                        </template>
-                                    </span>
+                                    <span x-text="selectedService?.fees === 0 ? 'Free' : 'LKR ' + formatPrice(selectedService?.fees) + '/person'"></span>
                                 </div>
+                            </div>
+                            
+                            <!-- Additional Info -->
+                            <div class="mt-4 flex gap-2">
+                                <span x-show="selectedService?.fees === 0" class="free-badge">
+                                    <i class="fas fa-gift mr-1"></i> Free Service
+                                </span>
+                                <span x-show="selectedService?.duration === 0" class="unlimited-badge">
+                                    <i class="fas fa-infinity mr-1"></i> Unlimited Time
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -1069,44 +1180,81 @@
                                 <input type="text" 
                                        x-ref="bookingDate"
                                        x-model="bookingDetails.date"
-                                       placeholder="Select date"
-                                       class="booking-input"
+                                       placeholder="Choose your preferred date"
+                                       class="date-select"
+                                       :class="{
+                                           'unavailable': bookingDetails.date && !bookingDetails.isAvailable,
+                                           'available': bookingDetails.date && bookingDetails.isAvailable
+                                       }"
                                        readonly>
                             </div>
+                            <p class="text-xs text-[#3a5a78] mt-1">
+                                <i class="far fa-clock mr-1"></i>
+                                Select your preferred date
+                            </p>
                         </div>
                         
-                        <!-- Time Selection -->
+                        <!-- Time Slots (duration-based intervals) -->
                         <div>
                             <label class="block text-sm font-semibold text-[#1e3c5c] mb-2">
                                 <i class="fas fa-clock mr-2 text-[#d4a373]"></i>Select Time
                             </label>
-                            <select x-model="bookingDetails.time" class="time-select">
-                                <option value="09:00">9:00 AM</option>
-                                <option value="10:00">10:00 AM</option>
-                                <option value="11:00">11:00 AM</option>
-                                <option value="12:00">12:00 PM</option>
-                                <option value="13:00">1:00 PM</option>
-                                <option value="14:00">2:00 PM</option>
-                                <option value="15:00">3:00 PM</option>
-                                <option value="16:00">4:00 PM</option>
-                                <option value="17:00">5:00 PM</option>
-                            </select>
+                            <div x-show="bookingDetails.date" class="time-slots">
+                                <template x-if="availableTimeSlots.length > 0">
+                                    <template x-for="time in availableTimeSlots" :key="time">
+                                        <div class="time-slot"
+                                             :class="{ 
+                                                 'selected': bookingDetails.time === time,
+                                                 'unavailable': !isTimeSlotAvailable(time)
+                                             }"
+                                             @click="selectTimeSlot(time)"
+                                             x-text="time">
+                                        </div>
+                                    </template>
+                                </template>
+                                <template x-if="availableTimeSlots.length === 0">
+                                    <div class="col-span-4 text-center py-4 text-[#3a5a78]">
+                                        No available time slots for this date
+                                    </div>
+                                </template>
+                            </div>
+                            <div x-show="!bookingDetails.date" class="text-sm text-[#3a5a78] text-center py-4">
+                                Please select a date first
+                            </div>
+                            <p class="text-xs text-[#3a5a78] mt-1">
+                                <i class="far fa-clock mr-1"></i>
+                                Service duration: <span x-text="selectedService?.duration === 0 ? 'Unlimited' : selectedService?.duration + ' minutes'"></span>
+                                <span x-show="selectedService?.duration > 0" class="block mt-1">
+                                    Available slots every <span x-text="selectedService?.duration"></span> minutes from 06:00 to 23:00
+                                </span>
+                            </p>
+                            
+                            <!-- Availability Warning -->
+                            <div x-show="!bookingDetails.isAvailable && bookingDetails.date" 
+                                 class="availability-warning mt-2">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <span>This time slot is not available. Please select a different time.</span>
+                            </div>
                         </div>
                         
-                        <!-- Number of Persons -->
+                        <!-- Number of Guests -->
                         <div>
                             <label class="block text-sm font-semibold text-[#1e3c5c] mb-2">
-                                <i class="fas fa-user-friends mr-2 text-[#d4a373]"></i>Number of Persons
+                                <i class="fas fa-users mr-2 text-[#d4a373]"></i>Number of Guests
                             </label>
-                            <input type="number" 
-                                   x-model="bookingDetails.persons"
-                                   min="1"
-                                   max="4"
-                                   class="booking-input">
-                            <p class="text-xs text-[#3a5a78] mt-1">
-                                <i class="far fa-info-circle mr-1"></i>
-                                Maximum 4 persons per booking
-                            </p>
+                            <div class="guest-counter">
+                                <button @click="decreaseGuests()" 
+                                        :disabled="bookingDetails.guests <= 1"
+                                        class="guest-counter-btn">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <span class="guest-count" x-text="bookingDetails.guests"></span>
+                                <button @click="increaseGuests()" 
+                                        :disabled="bookingDetails.guests >= 10"
+                                        class="guest-counter-btn">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
                         </div>
                         
                         <!-- Special Requests -->
@@ -1115,51 +1263,69 @@
                                 <i class="fas fa-comment mr-2 text-[#d4a373]"></i>Special Requests (Optional)
                             </label>
                             <textarea x-model="bookingDetails.specialRequests" 
-                                      rows="3"
-                                      placeholder="Any special requests? (e.g., allergies, preferences, etc.)"
+                                      rows="2"
+                                      placeholder="Any preferences? (e.g., preferred therapist, allergies, etc.)"
                                       class="booking-input"></textarea>
                         </div>
                         
-                        <!-- Total Price -->
-                        <div class="bg-[#f0f7fa] p-4 rounded-xl border border-[#b5e5e0]">
-                            <div class="flex justify-between items-center">
-                                <span class="font-semibold text-[#1e3c5c]">Total Amount:</span>
-                                <span class="text-2xl font-bold text-[#0284a8]">
-                                    <template x-if="selectedService?.fees === 0">
-                                        Free
-                                    </template>
-                                    <template x-if="selectedService?.fees > 0">
-                                        LKR <span x-text="formatPrice(selectedService?.fees * bookingDetails.persons)"></span>
-                                    </template>
-                                </span>
+                        <!-- Booking Summary -->
+                        <div class="booking-summary">
+                            <h4 class="font-semibold text-[#1e3c5c] mb-2">Booking Summary</h4>
+                            
+                            <div class="summary-row">
+                                <span class="summary-label">Service:</span>
+                                <span class="summary-value" x-text="selectedService?.title"></span>
                             </div>
-                            <p class="text-xs text-[#3a5a78] mt-1">
-                                <i class="far fa-info-circle mr-1"></i>
-                                Price per person: 
-                                <template x-if="selectedService?.fees === 0">
-                                    Free
-                                </template>
-                                <template x-if="selectedService?.fees > 0">
-                                    LKR <span x-text="formatPrice(selectedService?.fees)"></span>
-                                </template>
-                            </p>
+                            
+                            <div class="summary-row">
+                                <span class="summary-label">Date:</span>
+                                <span class="summary-value" x-text="bookingDetails.date ? formatDisplayDate(bookingDetails.date) : 'Not selected'"></span>
+                            </div>
+                            
+                            <div class="summary-row">
+                                <span class="summary-label">Time:</span>
+                                <span class="summary-value" x-text="bookingDetails.time || 'Not selected'"></span>
+                            </div>
+                            
+                            <div class="summary-row" x-show="selectedService?.duration > 0">
+                                <span class="summary-label">End Time:</span>
+                                <span class="summary-value" x-text="calculateEndTime()"></span>
+                            </div>
+                            
+                            <div class="summary-row">
+                                <span class="summary-label">Guests:</span>
+                                <span class="summary-value" x-text="bookingDetails.guests + ' ' + (bookingDetails.guests === 1 ? 'person' : 'persons')"></span>
+                            </div>
+                            
+                            <div class="summary-row">
+                                <span class="summary-label">Price per person:</span>
+                                <span class="summary-value" x-text="selectedService?.fees === 0 ? 'Free' : 'LKR ' + formatPrice(selectedService?.fees)"></span>
+                            </div>
+                            
+                            <div class="summary-row font-bold border-t border-[#b5e5e0] mt-2 pt-2">
+                                <span class="summary-label">Total Amount:</span>
+                                <span class="summary-total" x-text="selectedService?.fees === 0 ? 'Free' : 'LKR ' + formatPrice(bookingDetails.totalPrice)"></span>
+                            </div>
                         </div>
                         
                         <!-- Action Buttons -->
-                        <div class="flex gap-3 pt-4">
+                        <div class="flex gap-3 pt-2">
                             <button @click="closeBookingModal()" class="cancel-btn">
                                 <i class="fas fa-times mr-2"></i>Cancel
                             </button>
-                            <button @click="confirmBooking()" class="confirm-btn">
-                                <i class="fas fa-check-circle mr-2"></i>Confirm Booking
+                            <button @click="confirmBooking()" 
+                                    class="confirm-btn"
+                                    :disabled="!isBookingValid() || selectedService?.status === 'unavailable'">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                Confirm Booking
                             </button>
                         </div>
                         
-                        <!-- Test Mode Notice -->
-                        <div class="text-center mt-4">
-                            <span class="inline-flex items-center gap-2 bg-yellow-100 text-yellow-800 text-xs px-3 py-1.5 rounded-full">
-                                <i class="fas fa-flask"></i>
-                                Test Mode - Frontend Demo Only
+                        <!-- Unavailable Notice -->
+                        <div x-show="selectedService?.status === 'unavailable'" class="text-center mt-2">
+                            <span class="inline-flex items-center gap-2 bg-gray-100 text-gray-700 text-xs px-3 py-1.5 rounded-full">
+                                <i class="fas fa-ban"></i>
+                                This service is currently unavailable
                             </span>
                         </div>
                     </div>
@@ -1172,317 +1338,571 @@
     <jsp:include page="component/footer.jsp" />
 
     <script>
-        function serviceBooking() {
-            return {
-                // User data from login
-                isLoggedIn: false,
-                userId: null,
-                userName: '',
-                userEmail: '',
-                userRegNo: '',
-                userType: '',
-                authToken: '',
+function serviceBooking() {
+    return {
+        // User data from login
+        isLoggedIn: false,
+        userId: null,
+        userName: '',
+        userEmail: '',
+        userRegNo: '',
+        userType: '',
+        
+        // Data properties
+        services: [],
+        filteredServices: [],
+        categories: [],
+        loading: true,
+        
+        // Filters
+        filters: {
+            categoryId: 'all',
+            minPrice: '',
+            maxPrice: '',
+            duration: 'all',
+            sortBy: 'recommended'
+        },
+        
+        // Pagination
+        currentPage: 1,
+        itemsPerPage: 6,
+        
+        // Modal
+        showBookingModal: false,
+        selectedService: null,
+        datePickerInitialized: false,
+        flatpickrInstances: {
+            bookingDate: null
+        },
+        
+        // Business hours (6 AM to 11 PM)
+        BUSINESS_START_HOUR: 6,
+        BUSINESS_END_HOUR: 23,
+        
+        // Unavailable time slots
+        unavailableTimeSlots: [],
+        
+        // Booking Details
+        bookingDetails: {
+            date: '',
+            time: '',
+            guests: 1,
+            specialRequests: '',
+            totalPrice: 0,
+            isAvailable: true
+        },
+        
+        init() {
+            console.log('Initializing service booking...');
+            // Load user data from storage
+            this.loadUserData();
+            
+            // Load data
+            this.loadCategories();
+            this.loadServices();
+            
+            // Reset to first page when filters change
+            this.$watch('filteredServices', () => {
+                this.currentPage = 1;
+            });
+        },
+        
+        loadUserData() {
+            // Check localStorage first (persistent login)
+            this.userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
+            this.userName = localStorage.getItem('userName') || sessionStorage.getItem('userName');
+            this.userEmail = localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail');
+            this.userRegNo = localStorage.getItem('userRegNo') || sessionStorage.getItem('userRegNo');
+            this.userType = localStorage.getItem('userType') || sessionStorage.getItem('userType');
+            
+            this.isLoggedIn = !!(this.userId);
+            
+            if (this.isLoggedIn) {
+                console.log('User logged in:', this.userName);
+            }
+        },
+        
+        async loadCategories() {
+            try {
+                const response = await fetch('${pageContext.request.contextPath}/servicecategory/api/list');
+                const categories = await response.json();
                 
-                // Data properties
-                services: [],
-                filteredServices: [],
-                categories: [],
-                loading: true,
+                // Get service counts per category
+                const categoryStats = await this.loadCategoryStatistics();
                 
-                // Filters
-                filters: {
-                    categoryId: 'all',
-                    minPrice: '',
-                    maxPrice: '',
-                    duration: 'all',
-                    sortBy: 'recommended'
-                },
-                
-                // Pagination
-                currentPage: 1,
-                itemsPerPage: 6,
-                
-                // Modal
-                showBookingModal: false,
-                selectedService: null,
-                
-                // Booking Details
-                bookingDetails: {
-                    date: '',
-                    time: '10:00',
-                    persons: 1,
-                    specialRequests: ''
-                },
-                
-                init() {
-                    // Load user data from storage
-                    this.loadUserData();
-                    
-                    this.loadCategories();
-                    this.loadServices();
-                    
-                    // Reset to first page when filters change
-                    this.$watch('filteredServices', () => {
-                        this.currentPage = 1;
-                    });
-                },
-                
-                loadUserData() {
-                    // Check localStorage first (persistent login)
-                    this.authToken = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
-                    this.userId = localStorage.getItem('userId') || sessionStorage.getItem('userId');
-                    this.userName = localStorage.getItem('userName') || sessionStorage.getItem('userName');
-                    this.userEmail = localStorage.getItem('userEmail') || sessionStorage.getItem('userEmail');
-                    this.userRegNo = localStorage.getItem('userRegNo') || sessionStorage.getItem('userRegNo');
-                    this.userType = localStorage.getItem('userType') || sessionStorage.getItem('userType');
-                    
-                    this.isLoggedIn = !!(this.authToken && this.userId);
-                    
-                    if (this.isLoggedIn) {
-                        console.log('User logged in:', this.userName, 'Type:', this.userType);
-                    }
-                },
-                
-                loadCategories() {
-                    fetch('${pageContext.request.contextPath}/servicecategory/api/list')
-                        .then(response => response.json())
-                        .then(data => {
-                            this.categories = Array.isArray(data) ? data : [];
-                        })
-                        .catch(error => {
-                            console.error('Error loading categories:', error);
-                            this.categories = [];
-                        });
-                },
-                
-                loadServices() {
-                    this.loading = true;
-                    
-                    fetch('${pageContext.request.contextPath}/manageservices/api/list')
-                        .then(response => response.json())
-                        .then(data => {
-                            // Only show available services
-                            this.services = Array.isArray(data) ? data.filter(service => service.status === 'available') : [];
-                            this.applyFilters();
-                            this.loading = false;
-                        })
-                        .catch(error => {
-                            console.error('Error loading services:', error);
-                            this.services = [];
-                            this.filteredServices = [];
-                            this.loading = false;
-                            
-                            if (window.showError) {
-                                window.showError('Failed to load services', 3000);
-                            }
-                        });
-                },
-                
-                applyFilters() {
-                    let filtered = [...this.services];
-                    
-                    // Filter by category
-                    if (this.filters.categoryId !== 'all') {
-                        filtered = filtered.filter(service => service.categoryId == this.filters.categoryId);
-                    }
-                    
-                    // Filter by price range
-                    if (this.filters.minPrice) {
-                        filtered = filtered.filter(service => service.fees >= parseFloat(this.filters.minPrice));
-                    }
-                    if (this.filters.maxPrice) {
-                        filtered = filtered.filter(service => service.fees <= parseFloat(this.filters.maxPrice));
-                    }
-                    
-                    // Filter by duration
-                    if (this.filters.duration !== 'all') {
-                        const durationValue = parseInt(this.filters.duration);
-                        filtered = filtered.filter(service => service.duration === durationValue);
-                    }
-                    
-                    // Apply sorting
-                    switch(this.filters.sortBy) {
-                        case 'price_low':
-                            filtered.sort((a, b) => (a.fees || 0) - (b.fees || 0));
-                            break;
-                        case 'price_high':
-                            filtered.sort((a, b) => (b.fees || 0) - (a.fees || 0));
-                            break;
-                        case 'duration_low':
-                            filtered.sort((a, b) => (a.duration || 0) - (b.duration || 0));
-                            break;
-                        case 'duration_high':
-                            filtered.sort((a, b) => (b.duration || 0) - (a.duration || 0));
-                            break;
-                        default:
-                            // Recommended: sort by price (low to high) as default
-                            filtered.sort((a, b) => (a.fees || 0) - (b.fees || 0));
-                    }
-                    
-                    this.filteredServices = filtered;
-                },
-                
-                clearFilters() {
-                    this.filters = {
-                        categoryId: 'all',
-                        minPrice: '',
-                        maxPrice: '',
-                        duration: 'all',
-                        sortBy: 'recommended'
+                this.categories = Array.isArray(categories) ? categories.map(cat => {
+                    const stat = Array.isArray(categoryStats) ? categoryStats.find(s => s.id === cat.id) : null;
+                    return {
+                        ...cat,
+                        count: stat ? stat.serviceCount : 0
                     };
-                    this.applyFilters();
+                }) : [];
+            } catch (error) {
+                console.error('Error loading categories:', error);
+                this.categories = [];
+            }
+        },
+        
+        async loadCategoryStatistics() {
+            try {
+                const response = await fetch('${pageContext.request.contextPath}/manageservices/api/category-stats');
+                return await response.json();
+            } catch (error) {
+                console.error('Error loading category stats:', error);
+                return [];
+            }
+        },
+        
+        async loadServices() {
+            this.loading = true;
+            
+            try {
+                const response = await fetch('${pageContext.request.contextPath}/manageservices/api/list');
+                const data = await response.json();
+                this.services = Array.isArray(data) ? data : [];
+                this.applyFilters();
+            } catch (error) {
+                console.error('Error loading services:', error);
+                this.services = [];
+                this.filteredServices = [];
+                
+                if (window.showError) {
+                    window.showError('Failed to load services', 3000);
+                }
+            } finally {
+                this.loading = false;
+            }
+        },
+        
+        applyFilters() {
+            let filtered = this.services.filter(service => 
+                service.status === 'available' // Only show available services
+            );
+            
+            // Filter by category
+            if (this.filters.categoryId !== 'all') {
+                filtered = filtered.filter(service => service.categoryId == this.filters.categoryId);
+            }
+            
+            // Filter by price range
+            if (this.filters.minPrice) {
+                filtered = filtered.filter(service => service.fees >= parseFloat(this.filters.minPrice));
+            }
+            if (this.filters.maxPrice) {
+                filtered = filtered.filter(service => service.fees <= parseFloat(this.filters.maxPrice));
+            }
+            
+            // Filter by duration
+            if (this.filters.duration !== 'all') {
+                const durationValue = parseInt(this.filters.duration);
+                filtered = filtered.filter(service => service.duration === durationValue);
+            }
+            
+            // Apply sorting
+            switch(this.filters.sortBy) {
+                case 'price_low':
+                    filtered.sort((a, b) => a.fees - b.fees);
+                    break;
+                case 'price_high':
+                    filtered.sort((a, b) => b.fees - a.fees);
+                    break;
+                case 'duration_low':
+                    filtered.sort((a, b) => a.duration - b.duration);
+                    break;
+                case 'duration_high':
+                    filtered.sort((a, b) => b.duration - a.duration);
+                    break;
+                case 'name':
+                    filtered.sort((a, b) => a.title.localeCompare(b.title));
+                    break;
+                default:
+                    filtered.sort((a, b) => a.id - b.id);
+            }
+            
+            this.filteredServices = filtered;
+        },
+        
+        clearFilters() {
+            this.filters = {
+                categoryId: 'all',
+                minPrice: '',
+                maxPrice: '',
+                duration: 'all',
+                sortBy: 'recommended'
+            };
+            this.applyFilters();
+            
+            if (window.showInfo) {
+                window.showInfo('Filters cleared', 2000);
+            }
+        },
+        
+        formatPrice(price) {
+            if (!price && price !== 0) return '0';
+            return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        },
+        
+        formatDisplayDate(dateStr) {
+            if (!dateStr) return '';
+            try {
+                const options = { year: 'numeric', month: 'long', day: 'numeric' };
+                return new Date(dateStr).toLocaleDateString('en-US', options);
+            } catch (e) {
+                return dateStr;
+            }
+        },
+        
+        formatDate(date) {
+            if (!date) return '';
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        },
+        
+        // Pagination methods
+        get paginatedServices() {
+            let start = (this.currentPage - 1) * this.itemsPerPage;
+            let end = start + this.itemsPerPage;
+            return this.filteredServices.slice(start, end);
+        },
+        
+        get totalPages() {
+            return Math.ceil(this.filteredServices.length / this.itemsPerPage);
+        },
+        
+        prevPage() {
+            if (this.currentPage > 1) this.currentPage--;
+        },
+        
+        nextPage() {
+            if (this.currentPage < this.totalPages) this.currentPage++;
+        },
+        
+        goToPage(page) {
+            this.currentPage = page;
+        },
+        
+        // Get available time slots based on selected date
+        get availableTimeSlots() {
+            if (!this.selectedService || !this.bookingDetails.date) return [];
+            
+            const slots = [];
+            const selectedDate = new Date(this.bookingDetails.date);
+            const now = new Date();
+            
+            if (this.selectedService.duration === 0) {
+                // For unlimited duration, show hourly slots from 6 AM to 11 PM
+                for (let hour = this.BUSINESS_START_HOUR; hour <= this.BUSINESS_END_HOUR; hour++) {
+                    const timeStr = this.formatTime(hour, 0);
                     
-                    if (window.showInfo) {
-                        window.showInfo('Filters cleared', 2000);
-                    }
-                },
-                
-                // Pagination methods
-                get paginatedServices() {
-                    let start = (this.currentPage - 1) * this.itemsPerPage;
-                    let end = start + this.itemsPerPage;
-                    return this.filteredServices.slice(start, end);
-                },
-                
-                get totalPages() {
-                    return Math.ceil(this.filteredServices.length / this.itemsPerPage);
-                },
-                
-                prevPage() {
-                    if (this.currentPage > 1) this.currentPage--;
-                },
-                
-                nextPage() {
-                    if (this.currentPage < this.totalPages) this.currentPage++;
-                },
-                
-                goToPage(page) {
-                    this.currentPage = page;
-                },
-                
-                formatPrice(price) {
-                    if (!price) return '0';
-                    return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
-                },
-                
-                // Modal methods
-                openBookingModal(service) {
-                    if (!this.isLoggedIn) {
-                        // Show message and redirect to login if not logged in
-                        if (window.showInfo) {
-                            window.showInfo('Please login to book a service', 3000);
+                    // If selected date is today, filter out past times
+                    if (this.isToday(selectedDate)) {
+                        if (hour > now.getHours() || (hour === now.getHours() && 0 > now.getMinutes())) {
+                            slots.push(timeStr);
                         }
-                        setTimeout(() => {
-                            window.location.href = '${pageContext.request.contextPath}/login.jsp?redirect=bookservice';
-                        }, 1500);
-                        return;
+                    } else {
+                        slots.push(timeStr);
                     }
-                    
-                    this.selectedService = service;
-                    this.showBookingModal = true;
-                    
-                    // Reset booking details
-                    this.resetBookingDetails();
-                    
-                    // Initialize date picker after modal is shown
-                    setTimeout(() => {
-                        this.initDatePicker();
-                    }, 100);
-                },
+                }
+            } else {
+                // For fixed duration, generate slots every 'duration' minutes
+                const duration = this.selectedService.duration;
+                const startMinutes = this.BUSINESS_START_HOUR * 60;
+                const endMinutes = this.BUSINESS_END_HOUR * 60;
                 
-                closeBookingModal() {
-                    this.showBookingModal = false;
-                    this.selectedService = null;
-                    this.resetBookingDetails();
-                },
-                
-                resetBookingDetails() {
-                    this.bookingDetails = {
-                        date: '',
-                        time: '10:00',
-                        persons: 1,
-                        specialRequests: ''
-                    };
-                },
-                
-                initDatePicker() {
-                    if (!this.$refs.bookingDate) return;
+                for (let minutes = startMinutes; minutes <= endMinutes - duration; minutes += duration) {
+                    const hour = Math.floor(minutes / 60);
+                    const minute = minutes % 60;
+                    const timeStr = this.formatTime(hour, minute);
                     
-                    const today = new Date();
-                    
-                    flatpickr(this.$refs.bookingDate, {
-                        minDate: 'today',
-                        dateFormat: 'Y-m-d',
-                        defaultDate: today,
-                        onChange: (selectedDates, dateStr) => {
-                            this.bookingDetails.date = dateStr;
+                    // If selected date is today, filter out past times
+                    if (this.isToday(selectedDate)) {
+                        const currentMinutes = now.getHours() * 60 + now.getMinutes();
+                        if (minutes > currentMinutes) {
+                            slots.push(timeStr);
                         }
-                    });
-                    
-                    // Set initial date
-                    this.bookingDetails.date = this.formatDate(today);
-                },
-                
-                formatDate(date) {
-                    const year = date.getFullYear();
-                    const month = String(date.getMonth() + 1).padStart(2, '0');
-                    const day = String(date.getDate()).padStart(2, '0');
-                    return `${year}-${month}-${day}`;
-                },
-                
-                confirmBooking() {
-                    if (!this.bookingDetails.date) {
-                        if (window.showError) {
-                            window.showError('Please select a date', 3000);
-                        }
-                        return;
+                    } else {
+                        slots.push(timeStr);
                     }
-                    
-                    if (!this.bookingDetails.time) {
-                        if (window.showError) {
-                            window.showError('Please select a time', 3000);
-                        }
-                        return;
-                    }
-                    
-                    if (!this.bookingDetails.persons || this.bookingDetails.persons < 1) {
-                        if (window.showError) {
-                            window.showError('Please enter number of persons', 3000);
-                        }
-                        return;
-                    }
-                    
-                    if (this.bookingDetails.persons > 4) {
-                        if (window.showError) {
-                            window.showError('Maximum 4 persons per booking', 3000);
-                        }
-                        return;
-                    }
-                    
-                    // Show success message (test mode)
-                    if (window.showSuccess) {
-                        window.showSuccess('Service booked successfully! (Test Mode - This is just a demo)', 3000);
-                    }
-                    
-                    // Log booking details to console
-                    console.log('Service Booking Details:', {
-                        service: this.selectedService,
-                        userId: this.userId,
-                        userName: this.userName,
-                        date: this.bookingDetails.date,
-                        time: this.bookingDetails.time,
-                        persons: this.bookingDetails.persons,
-                        specialRequests: this.bookingDetails.specialRequests,
-                        totalPrice: this.selectedService.fees * this.bookingDetails.persons
-                    });
-                    
-                    // Close modal
-                    setTimeout(() => {
-                        this.closeBookingModal();
-                    }, 2000);
                 }
             }
+            
+            return slots;
+        },
+        
+        isToday(date) {
+            const today = new Date();
+            return date.getDate() === today.getDate() &&
+                   date.getMonth() === today.getMonth() &&
+                   date.getFullYear() === today.getFullYear();
+        },
+        
+        formatTime(hour, minute) {
+            return `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        },
+        
+        isTimeSlotAvailable(time) {
+            // Check if time slot is in unavailable list
+            return !this.unavailableTimeSlots.includes(time);
+        },
+        
+        // Modal methods
+        async openBookingModal(service) {
+            if (!this.isLoggedIn) {
+                if (window.showInfo) {
+                    window.showInfo('Please login to book a service', 3000);
+                }
+                setTimeout(() => {
+                    window.location.href = '${pageContext.request.contextPath}/login.jsp?redirect=bookservice';
+                }, 1500);
+                return;
+            }
+            
+            if (service.status === 'unavailable') {
+                if (window.showError) {
+                    window.showError('This service is currently unavailable', 3000);
+                }
+                return;
+            }
+            
+            this.selectedService = service;
+            this.showBookingModal = true;
+            this.datePickerInitialized = false;
+            
+            this.destroyFlatpickrInstance();
+            this.resetBookingDetails();
+            
+            // Small delay to ensure DOM is ready
+            setTimeout(() => {
+                this.initDatePicker();
+            }, 300);
+        },
+        
+        destroyFlatpickrInstance() {
+            if (this.flatpickrInstances.bookingDate) {
+                this.flatpickrInstances.bookingDate.destroy();
+                this.flatpickrInstances.bookingDate = null;
+            }
+        },
+        
+        closeBookingModal() {
+            this.showBookingModal = false;
+            this.selectedService = null;
+            this.datePickerInitialized = false;
+            this.destroyFlatpickrInstance();
+        },
+        
+        resetBookingDetails() {
+            this.bookingDetails = {
+                date: '',
+                time: '',
+                guests: 1,
+                specialRequests: '',
+                totalPrice: this.selectedService?.fees || 0,
+                isAvailable: true
+            };
+            this.unavailableTimeSlots = ['12:00', '13:00', '18:00']; // Example unavailable slots
+        },
+        
+        initDatePicker() {
+            if (!this.$refs.bookingDate) {
+                console.error('Date picker ref not found');
+                return;
+            }
+            
+            if (this.datePickerInitialized) {
+                console.log('Date picker already initialized');
+                return;
+            }
+
+            console.log('Initializing date picker');
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // Calculate max date (3 months from now)
+            const maxDate = new Date(today);
+            maxDate.setMonth(maxDate.getMonth() + 3);
+
+            // Destroy any existing instance
+            this.destroyFlatpickrInstance();
+
+            try {
+                // Create date picker
+                this.flatpickrInstances.bookingDate = flatpickr(this.$refs.bookingDate, {
+                    minDate: 'today',
+                    maxDate: maxDate,
+                    dateFormat: 'Y-m-d',
+                    onChange: (selectedDates, dateStr) => {
+                        console.log('Date changed:', dateStr);
+                        this.bookingDetails.date = dateStr;
+                        this.bookingDetails.time = ''; // Reset time when date changes
+                        this.checkAvailability();
+                    }
+                });
+
+                console.log('Flatpickr picker created successfully');
+                this.datePickerInitialized = true;
+
+            } catch (error) {
+                console.error('Error initializing date picker:', error);
+                this.datePickerInitialized = false;
+            }
+        },
+        
+        selectTimeSlot(time) {
+            if (this.isTimeSlotAvailable(time)) {
+                this.bookingDetails.time = time;
+                this.checkAvailability();
+            }
+        },
+        
+        increaseGuests() {
+            if (this.bookingDetails.guests < 10) {
+                this.bookingDetails.guests++;
+                this.updateTotalPrice();
+            }
+        },
+        
+        decreaseGuests() {
+            if (this.bookingDetails.guests > 1) {
+                this.bookingDetails.guests--;
+                this.updateTotalPrice();
+            }
+        },
+        
+        updateTotalPrice() {
+            if (this.selectedService) {
+                this.bookingDetails.totalPrice = this.selectedService.fees * this.bookingDetails.guests;
+            }
+        },
+        
+        calculateEndTime() {
+            if (!this.bookingDetails.time || !this.selectedService || this.selectedService.duration === 0) {
+                return '—';
+            }
+            
+            const [hours, minutes] = this.bookingDetails.time.split(':').map(Number);
+            const startMinutes = hours * 60 + minutes;
+            const endMinutes = startMinutes + this.selectedService.duration;
+            
+            const endHour = Math.floor(endMinutes / 60);
+            const endMinute = endMinutes % 60;
+            
+            return this.formatTime(endHour, endMinute);
+        },
+        
+        checkAvailability() {
+            if (!this.bookingDetails.date || !this.bookingDetails.time) {
+                this.bookingDetails.isAvailable = false;
+                return;
+            }
+            
+            // Check if time slot is available
+            this.bookingDetails.isAvailable = this.isTimeSlotAvailable(this.bookingDetails.time);
+            
+            // Also check if the date is valid (not in past)
+            const selectedDate = new Date(this.bookingDetails.date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate < today) {
+                this.bookingDetails.isAvailable = false;
+                return;
+            }
+            
+            // If selected date is today, check if time is in the future
+            if (this.isToday(selectedDate)) {
+                const now = new Date();
+                const [hours, minutes] = this.bookingDetails.time.split(':').map(Number);
+                const selectedTime = new Date();
+                selectedTime.setHours(hours, minutes, 0);
+                
+                if (selectedTime <= now) {
+                    this.bookingDetails.isAvailable = false;
+                }
+            }
+        },
+        
+        isBookingValid() {
+            return this.bookingDetails.date && 
+                   this.bookingDetails.time && 
+                   this.bookingDetails.guests > 0 &&
+                   this.bookingDetails.isAvailable &&
+                   this.selectedService?.status === 'available';
+        },
+        
+        confirmBooking() {
+            if (!this.isBookingValid()) {
+                if (window.showError) {
+                    window.showError('Please select a valid date and time', 3000);
+                }
+                return;
+            }
+            
+            if (this.selectedService.status === 'unavailable') {
+                if (window.showError) {
+                    window.showError('This service is unavailable', 3000);
+                }
+                return;
+            }
+            
+            const bookingData = {
+                serviceId: parseInt(this.selectedService.id),
+                guestId: parseInt(this.userId),
+                bookingDate: this.bookingDetails.date,
+                bookingTime: this.bookingDetails.time + ':00',
+                numberOfGuests: this.bookingDetails.guests,
+                specialRequests: this.bookingDetails.specialRequests || '',
+                totalPrice: this.bookingDetails.totalPrice
+            };
+            
+            console.log('Sending booking data:', bookingData);
+            
+            if (window.showInfo) {
+                window.showInfo('Processing your booking...', 0);
+            }
+            
+            fetch('${pageContext.request.contextPath}/bookservice/api/create', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(bookingData)
+            })
+            .then(async response => {
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || `Server error: ${response.status}`);
+                }
+                return data;
+            })
+            .then(data => {
+                if (data.success) {
+                    if (window.showSuccess) {
+                        window.showSuccess(data.message, 5000);
+                    }
+                    
+                    // Redirect to my bookings page after successful booking
+                    setTimeout(() => {
+                        window.location.href = '${pageContext.request.contextPath}/serviceactivity.jsp';
+                    }, 2000);
+                } else {
+                    if (window.showError) {
+                        window.showError(data.message, 5000);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error creating booking:', error);
+                if (window.showError) {
+                    window.showError(error.message || 'Failed to create booking. Please try again.', 3000);
+                }
+            });
         }
+    }
+}
     </script>
 </body>
 </html>
